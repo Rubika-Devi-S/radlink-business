@@ -1,93 +1,159 @@
 <?php
 declare(strict_types=1);
 
+date_default_timezone_set('Asia/Kolkata');
 
-$databaseName = 'u966043993_radlink';
-$databaseUser = 'u966043993_radlink';
-$databasePassword = 'CU/;lz5j^';
-$databasePort = 3306;
-$charset = 'utf8mb4';
+/**
+ * RAD LINK HEALTH
+ * Database connection for:
+ * 1. Hostinger live server  -> localhost
+ * 2. Local XAMPP / WAMP    -> Hostinger remote MySQL host
+ */
 
-$remoteDatabaseHost = 'REPLACE_WITH_HOSTINGER_REMOTE_MYSQL_HOST';
+$serverName = strtolower((string) ($_SERVER['SERVER_NAME'] ?? 'localhost'));
+$httpHost   = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
 
-$serverName = strtolower((string) ($_SERVER['SERVER_NAME'] ?? ''));
-$httpHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-
-$isLocalEnvironment =
-    PHP_SAPI === 'cli-server'
-    || $serverName === 'localhost'
-    || $serverName === '127.0.0.1'
+/*
+|--------------------------------------------------------------------------
+| Environment Detection
+|--------------------------------------------------------------------------
+*/
+$isLocalhost =
+    in_array($serverName, ['localhost', '127.0.0.1', '::1'], true)
     || str_starts_with($httpHost, 'localhost')
-    || str_starts_with($httpHost, '127.0.0.1');
+    || str_starts_with($httpHost, '127.0.0.1')
+    || str_contains($serverName, '.test')
+    || str_contains($serverName, '.local')
+    || PHP_SAPI === 'cli-server';
 
-$databaseHost = $isLocalEnvironment ? $remoteDatabaseHost : 'localhost';
-
-if (
-    $isLocalEnvironment
-    && (
-        $databaseHost === ''
-        || $databaseHost === 'REPLACE_WITH_HOSTINGER_REMOTE_MYSQL_HOST'
-        || $databaseHost === 'localhost'
-    )
-) {
-    http_response_code(500);
-
-    exit(
-        '<h3>Remote database hostname is not configured.</h3>' .
-        '<p>Open <strong>config/db.php</strong> and replace:</p>' .
-        '<pre>$remoteDatabaseHost = \'REPLACE_WITH_HOSTINGER_REMOTE_MYSQL_HOST\';</pre>' .
-        '<p>with the exact Remote MySQL hostname or IP from your Hostinger account.</p>'
-    );
+/*
+|--------------------------------------------------------------------------
+| Database Host
+|--------------------------------------------------------------------------
+| Local development uses Hostinger remote MySQL.
+| Live Hostinger server uses localhost.
+*/
+if ($isLocalhost) {
+    $dbHost = 'auth-db1740.hstgr.io';
+    $dbPort = 3306;
+} else {
+    $dbHost = 'localhost';
+    $dbPort = 3306;
 }
 
-$dsn = sprintf(
-    'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-    $databaseHost,
-    $databasePort,
-    $databaseName,
-    $charset
-);
+/*
+|--------------------------------------------------------------------------
+| Database Credentials
+|--------------------------------------------------------------------------
+*/
+$dbName = 'u966043993_radlink';
+$dbUser = 'u966043993_radlink';
+$dbPass = 'CU/;lz5j^';
+$dbCharset = 'utf8mb4';
 
-$options = [
+/*
+|--------------------------------------------------------------------------
+| PDO Connection
+|--------------------------------------------------------------------------
+*/
+$dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset={$dbCharset}";
+
+$pdoOptions = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES   => false,
     PDO::ATTR_PERSISTENT         => false,
-    PDO::ATTR_TIMEOUT            => 15,
+    PDO::ATTR_TIMEOUT            => 20,
 ];
 
 try {
     $pdo = new PDO(
         $dsn,
-        $databaseUser,
-        $databasePassword,
-        $options
+        $dbUser,
+        $dbPass,
+        $pdoOptions
     );
 
     $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
     $pdo->exec("SET time_zone = '+05:30'");
-} catch (PDOException $exception) {
+} catch (PDOException $e) {
+    $safeHost = htmlspecialchars($dbHost, ENT_QUOTES, 'UTF-8');
+    $safeError = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
+
     error_log(
         sprintf(
-            '[RAD LINK DB ERROR] Host: %s | Database: %s | Message: %s',
-            $databaseHost,
-            $databaseName,
-            $exception->getMessage()
+            '[RAD LINK PDO ERROR] Host: %s | Database: %s | Message: %s',
+            $dbHost,
+            $dbName,
+            $e->getMessage()
         )
     );
 
     http_response_code(500);
 
-    if ($isLocalEnvironment) {
-        exit(
-            '<h3>Unable to connect to the remote database.</h3>' .
-            '<p><strong>Host:</strong> ' .
-            htmlspecialchars($databaseHost, ENT_QUOTES, 'UTF-8') .
-            '</p><p><strong>Error:</strong> ' .
-            htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8') .
-            '</p><p>Check the remote hostname, database credentials, port 3306, and whether your current public IP is permitted for remote database access.</p>'
+    if ($isLocalhost) {
+        die(
+            '<h3>PDO remote database connection failed</h3>' .
+            '<p><strong>Host:</strong> ' . $safeHost . '</p>' .
+            '<p><strong>Database:</strong> ' . htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8') . '</p>' .
+            '<p><strong>Error:</strong> ' . $safeError . '</p>' .
+            '<p>Please confirm that:</p>' .
+            '<ul>' .
+            '<li>Your current public IP is added in Hostinger Remote MySQL access.</li>' .
+            '<li>Port 3306 is not blocked by your internet provider or firewall.</li>' .
+            '<li>The remote host is exactly <strong>auth-db1740.hstgr.io</strong>.</li>' .
+            '<li>The PHP extension <strong>pdo_mysql</strong> is enabled.</li>' .
+            '</ul>'
         );
     }
 
-    exit('Unable to connect to the database. Please try again later.');
+    die('Unable to connect to the database. Please try again later.');
 }
+
+/*
+|--------------------------------------------------------------------------
+| MySQLi Connection
+|--------------------------------------------------------------------------
+| Kept for compatibility with pages that use mysqli.
+*/
+mysqli_report(MYSQLI_REPORT_OFF);
+
+$conn = mysqli_connect(
+    $dbHost,
+    $dbUser,
+    $dbPass,
+    $dbName,
+    $dbPort
+);
+
+if (!$conn) {
+    $mysqliError = mysqli_connect_error();
+
+    error_log(
+        sprintf(
+            '[RAD LINK MYSQLI ERROR] Host: %s | Database: %s | Message: %s',
+            $dbHost,
+            $dbName,
+            $mysqliError
+        )
+    );
+
+    http_response_code(500);
+
+    if ($isLocalhost) {
+        die(
+            '<h3>MySQLi remote database connection failed</h3>' .
+            '<p><strong>Host:</strong> ' .
+            htmlspecialchars($dbHost, ENT_QUOTES, 'UTF-8') .
+            '</p><p><strong>Error:</strong> ' .
+            htmlspecialchars($mysqliError, ENT_QUOTES, 'UTF-8') .
+            '</p>'
+        );
+    }
+
+    die('Unable to connect to the database. Please try again later.');
+}
+
+mysqli_set_charset($conn, 'utf8mb4');
+mysqli_query($conn, "SET time_zone = '+05:30'");
+?>
