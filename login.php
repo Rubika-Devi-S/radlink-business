@@ -22,10 +22,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare(
             "SELECT id, full_name, username, email, password_hash, role_key, is_super_admin, status
              FROM users
-             WHERE username = :login OR email = :login
+             WHERE username = :username
+                OR email = :email
              LIMIT 1"
         );
-        $stmt->execute(['login' => $usernameOrEmail]);
+
+        $stmt->execute([
+            'username' => $usernameOrEmail,
+            'email' => $usernameOrEmail,
+        ]);
+
         $user = $stmt->fetch();
 
         if (
@@ -85,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -94,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/css/app.css" rel="stylesheet">
 </head>
+
 <body class="auth-page">
     <main class="container-fluid min-vh-100">
         <div class="row min-vh-100">
@@ -151,15 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <?php if ($error !== ''): ?>
-                        <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
-                            <i class="bi bi-exclamation-circle-fill mt-1"></i>
-                            <div><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
-                        </div>
+                    <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+                        <i class="bi bi-exclamation-circle-fill mt-1"></i>
+                        <div><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+                    </div>
                     <?php endif; ?>
 
                     <form method="post" autocomplete="on" novalidate>
                         <input type="hidden" name="csrf_token"
-                               value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+                            value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                         <div class="mb-3">
                             <label for="username" class="form-label">Username or email</label>
@@ -167,17 +175,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <span class="input-group-text">
                                     <i class="bi bi-person"></i>
                                 </span>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="username"
-                                    name="username"
+                                <input type="text" class="form-control" id="username" name="username"
                                     value="<?= htmlspecialchars($usernameOrEmail, ENT_QUOTES, 'UTF-8') ?>"
-                                    placeholder="Enter username or email"
-                                    autocomplete="username"
-                                    required
-                                    autofocus
-                                >
+                                    placeholder="Enter username or email" autocomplete="username" required autofocus>
                             </div>
                         </div>
 
@@ -187,17 +187,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <span class="input-group-text">
                                     <i class="bi bi-lock"></i>
                                 </span>
-                                <input
-                                    type="password"
-                                    class="form-control"
-                                    id="password"
-                                    name="password"
-                                    placeholder="Enter password"
-                                    autocomplete="current-password"
-                                    required
-                                >
+                                <input type="password" class="form-control" id="password" name="password"
+                                    placeholder="Enter password" autocomplete="current-password" required>
                                 <button class="btn password-toggle" type="button" id="togglePassword"
-                                        aria-label="Show or hide password">
+                                    aria-label="Show or hide password">
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>
@@ -219,16 +212,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script>
-        const toggle = document.getElementById('togglePassword');
-        const password = document.getElementById('password');
+    const toggle = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
 
-        toggle.addEventListener('click', function () {
-            const show = password.type === 'password';
-            password.type = show ? 'text' : 'password';
-            this.innerHTML = show
-                ? '<i class="bi bi-eye-slash"></i>'
-                : '<i class="bi bi-eye"></i>';
-        });
+    toggle.addEventListener('click', function() {
+        const show = password.type === 'password';
+        password.type = show ? 'text' : 'password';
+        this.innerHTML = show ?
+            '<i class="bi bi-eye-slash"></i>' :
+            '<i class="bi bi-eye"></i>';
+    });
     </script>
 </body>
+
 </html>
