@@ -10,8 +10,8 @@ $error = '';
 $usernameOrEmail = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $usernameOrEmail = trim((string) ($_POST['username'] ?? ''));
-    $password = (string) ($_POST['password'] ?? '');
+    $usernameOrEmail = trim((string)($_POST['username'] ?? ''));
+    $password = (string)($_POST['password'] ?? '');
     $csrf = $_POST['csrf_token'] ?? null;
 
     if (!verify_csrf_token(is_string($csrf) ? $csrf : null)) {
@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Enter your username or email and password.';
     } else {
         $stmt = $pdo->prepare(
-            "SELECT id, full_name, username, email, password_hash, role_key, is_super_admin, status
+            "SELECT id, full_name, username, email, password_hash,
+                    role_key, is_super_admin, status
              FROM users
              WHERE username = :username
                 OR email = :email
@@ -41,12 +42,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) {
             session_regenerate_id(true);
 
-            $_SESSION['user_id'] = (int) $user['id'];
-            $_SESSION['full_name'] = $user['full_name'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role_key'] = $user['role_key'];
-            $_SESSION['is_super_admin'] = (bool) $user['is_super_admin'];
+            $_SESSION['user_id'] = (int)$user['id'];
+            $_SESSION['full_name'] = (string)$user['full_name'];
+            $_SESSION['username'] = (string)$user['username'];
+            $_SESSION['email'] = (string)($user['email'] ?? '');
+            $_SESSION['role_key'] = (string)$user['role_key'];
+            $_SESSION['is_super_admin'] = (bool)$user['is_super_admin'];
             $_SESSION['logged_in_at'] = date('Y-m-d H:i:s');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Resolve default business after login
+            |--------------------------------------------------------------------------
+            */
+            $businessStmt = $pdo->prepare(
+                "SELECT b.id, b.business_name, b.business_code, uba.access_role
+                 FROM user_business_access uba
+                 INNER JOIN businesses b ON b.id = uba.business_id
+                 WHERE uba.user_id = :user_id
+                   AND uba.status = 'active'
+                   AND b.status = 'active'
+                 ORDER BY uba.is_default DESC, b.id ASC
+                 LIMIT 1"
+            );
+            $businessStmt->execute(['user_id' => $user['id']]);
+            $business = $businessStmt->fetch();
+
+            if ($business) {
+                $_SESSION['business_id'] = (int)$business['id'];
+                $_SESSION['business_name'] = (string)$business['business_name'];
+                $_SESSION['business_code'] = (string)$business['business_code'];
+                $_SESSION['access_role'] = (string)$business['access_role'];
+            } else {
+                unset(
+                    $_SESSION['business_id'],
+                    $_SESSION['business_name'],
+                    $_SESSION['business_code'],
+                    $_SESSION['access_role']
+                );
+            }
 
             $update = $pdo->prepare(
                 "UPDATE users SET last_login_at = NOW() WHERE id = :id"
@@ -91,138 +125,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login | RAD LINK HEALTH</title>
-    <meta name="theme-color" content="#6f42c1">
+    <title>Login | RAD LINK SCANS</title>
+    <meta name="theme-color" content="#7146c7">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="assets/css/app.css" rel="stylesheet">
+    <link href="assets/css/login.css" rel="stylesheet">
 </head>
 
 <body class="auth-page">
-    <main class="container-fluid min-vh-100">
-        <div class="row min-vh-100">
-            <section class="col-lg-6 d-none d-lg-flex auth-visual">
-                <div class="auth-visual-content">
-                    <span class="brand-pill">
-                        <i class="bi bi-heart-pulse-fill"></i>
-                        RAD LINK BUSINESS SUITE
-                    </span>
+<main class="container-fluid min-vh-100">
+    <div class="row min-vh-100">
 
-                    <h1>Manage RAD LINK HEALTH from one secure dashboard.</h1>
+        <section class="col-lg-6 d-none d-lg-flex auth-visual">
+            <div class="auth-glow auth-glow-one"></div>
+            <div class="auth-glow auth-glow-two"></div>
 
-                    <p>
-                        Client billing, reporting services, hospital settlements,
-                        payments, expenses and business reports in one responsive system.
-                    </p>
+            <div class="auth-visual-content position-relative">
+                <span class="brand-pill">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                    RAD LINK BUSINESS SUITE
+                </span>
 
-                    <div class="feature-grid">
-                        <div class="feature-card">
-                            <i class="bi bi-hospital"></i>
-                            <span>Clients & Hospitals</span>
-                        </div>
-                        <div class="feature-card">
-                            <i class="bi bi-receipt"></i>
-                            <span>Invoices & Payments</span>
-                        </div>
-                        <div class="feature-card">
-                            <i class="bi bi-arrow-left-right"></i>
-                            <span>Settlements</span>
-                        </div>
-                        <div class="feature-card">
-                            <i class="bi bi-bar-chart"></i>
-                            <span>Business Reports</span>
-                        </div>
+                <h1>Manage RAD LINK SCANS from one secure dashboard.</h1>
+
+                <p>
+                    Client billing, reporting services, hospital settlements,
+                    payments, expenses and business reports in one responsive system.
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <span class="feature-icon"><i class="bi bi-hospital"></i></span>
+                        <span>Clients & Hospitals</span>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon"><i class="bi bi-receipt"></i></span>
+                        <span>Invoices & Payments</span>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon"><i class="bi bi-arrow-left-right"></i></span>
+                        <span>Settlements</span>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon"><i class="bi bi-bar-chart"></i></span>
+                        <span>Business Reports</span>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section class="col-12 col-lg-6 d-flex align-items-center justify-content-center p-3 p-md-5">
-                <div class="login-card">
-                    <div class="mobile-brand d-lg-none">
-                        <div class="mobile-logo">
-                            <i class="bi bi-heart-pulse-fill"></i>
-                        </div>
-                        <div>
-                            <strong>RAD LINK HEALTH</strong>
-                            <small>Business Management System</small>
-                        </div>
+        <section class="col-12 col-lg-6 d-flex align-items-center justify-content-center p-3 p-md-5 auth-form-side">
+            <div class="login-card">
+
+                <div class="mobile-brand d-lg-none">
+                    <div class="mobile-logo">
+                        <i class="bi bi-heart-pulse-fill"></i>
                     </div>
-
-                    <div class="login-heading">
-                        <span class="eyebrow">SECURE LOGIN</span>
-                        <h2>Welcome back</h2>
-                        <p>Sign in to continue to your dashboard.</p>
+                    <div>
+                        <strong>RAD LINK SCANS</strong>
+                        <small>Business Management System</small>
                     </div>
+                </div>
 
-                    <?php if ($error !== ''): ?>
-                    <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+                <div class="login-heading">
+                    <span class="eyebrow">SECURE LOGIN</span>
+                    <h2>Welcome back</h2>
+                    <p>Sign in to continue to your dashboard.</p>
+                </div>
+
+                <?php if ($error !== ''): ?>
+                    <div class="alert alert-danger d-flex align-items-start gap-2 border-0 rounded-4" role="alert">
                         <i class="bi bi-exclamation-circle-fill mt-1"></i>
                         <div><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
                     </div>
-                    <?php endif; ?>
+                <?php endif; ?>
 
-                    <form method="post" autocomplete="on" novalidate>
-                        <input type="hidden" name="csrf_token"
-                            value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+                <form method="post" autocomplete="on" novalidate>
+                    <input type="hidden" name="csrf_token"
+                           value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username or email</label>
-                            <div class="input-group input-group-lg custom-input">
-                                <span class="input-group-text">
-                                    <i class="bi bi-person"></i>
-                                </span>
-                                <input type="text" class="form-control" id="username" name="username"
-                                    value="<?= htmlspecialchars($usernameOrEmail, ENT_QUOTES, 'UTF-8') ?>"
-                                    placeholder="Enter username or email" autocomplete="username" required autofocus>
-                            </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username or email</label>
+                        <div class="input-group input-group-lg custom-input">
+                            <span class="input-group-text">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <input type="text"
+                                   class="form-control"
+                                   id="username"
+                                   name="username"
+                                   value="<?= htmlspecialchars($usernameOrEmail, ENT_QUOTES, 'UTF-8') ?>"
+                                   placeholder="Enter username or email"
+                                   autocomplete="username"
+                                   required
+                                   autofocus>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <div class="input-group input-group-lg custom-input">
-                                <span class="input-group-text">
-                                    <i class="bi bi-lock"></i>
-                                </span>
-                                <input type="password" class="form-control" id="password" name="password"
-                                    placeholder="Enter password" autocomplete="current-password" required>
-                                <button class="btn password-toggle" type="button" id="togglePassword"
-                                    aria-label="Show or hide password">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-lg w-100 login-btn">
-                            <span>Sign in</span>
-                            <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </form>
-
-                    <div class="login-footer">
-                        <i class="bi bi-shield-check"></i>
-                        Secure access for authorised users only
                     </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group input-group-lg custom-input">
+                            <span class="input-group-text">
+                                <i class="bi bi-lock"></i>
+                            </span>
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   placeholder="Enter password"
+                                   autocomplete="current-password"
+                                   required>
+                            <button class="btn password-toggle"
+                                    type="button"
+                                    id="togglePassword"
+                                    aria-label="Show or hide password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 login-btn">
+                        <span>Sign in</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="login-footer">
+                    <i class="bi bi-shield-check"></i>
+                    Secure access for authorised users only
                 </div>
-            </section>
-        </div>
-    </main>
+            </div>
+        </section>
+    </div>
+</main>
 
-    <script>
-    const toggle = document.getElementById('togglePassword');
-    const password = document.getElementById('password');
+<script>
+const toggle = document.getElementById('togglePassword');
+const password = document.getElementById('password');
 
-    toggle.addEventListener('click', function() {
-        const show = password.type === 'password';
-        password.type = show ? 'text' : 'password';
-        this.innerHTML = show ?
-            '<i class="bi bi-eye-slash"></i>' :
-            '<i class="bi bi-eye"></i>';
-    });
-    </script>
+toggle.addEventListener('click', function () {
+    const show = password.type === 'password';
+    password.type = show ? 'text' : 'password';
+    this.innerHTML = show
+        ? '<i class="bi bi-eye-slash"></i>'
+        : '<i class="bi bi-eye"></i>';
+});
+</script>
 </body>
-
 </html>
