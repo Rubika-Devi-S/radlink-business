@@ -1782,6 +1782,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const formData = new FormData(settingsForm);
+            formData.set('backend_action', 'save_settings');
 
             [
                 'invoice_show_logo',
@@ -1812,7 +1813,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = await postForm(
-                '<?= e(app_url('api/invoice-settings-save.php')) ?>',
+                '<?= e(app_url('api/invoice.php')) ?>',
                 formData
             );
 
@@ -1864,12 +1865,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const formData = new FormData();
                 formData.append('csrf_token', window.APP_CSRF);
+                formData.append('backend_action', 'upload_asset');
                 formData.append('asset_type', type);
                 formData.append('asset_file', input.files[0]);
 
                 try {
                     const result = await postForm(
-                        '<?= e(app_url('api/invoice-asset.php')) ?>',
+                        '<?= e(app_url('api/invoice.php')) ?>',
                         formData
                     );
 
@@ -1901,10 +1903,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     'asset_type',
                     button.dataset.deleteAsset
                 );
-                formData.append('action', 'delete');
+                formData.append('backend_action', 'delete_asset');
 
                 const result = await postForm(
-                    '<?= e(app_url('api/invoice-asset.php')) ?>',
+                    '<?= e(app_url('api/invoice.php')) ?>',
                     formData
                 );
 
@@ -1952,8 +1954,12 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         const result = await postForm(
-            '<?= e(app_url('api/invoice-bank.php')) ?>',
-            new FormData(bankForm)
+            '<?= e(app_url('api/invoice.php')) ?>',
+            (() => {
+                const formData = new FormData(bankForm);
+                formData.set('backend_action', 'save_bank');
+                return formData;
+            })()
         );
 
         AppToast.show(
@@ -1970,11 +1976,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
 
         formData.append('csrf_token', window.APP_CSRF);
-        formData.append('action', action);
+        const actionMap = {
+            toggle: 'toggle_bank',
+            default: 'default_bank',
+            delete: 'delete_bank'
+        };
+
+        formData.append('backend_action', actionMap[action] || action);
         formData.append('id', id);
 
         const result = await postForm(
-            '<?= e(app_url('api/invoice-bank.php')) ?>',
+            '<?= e(app_url('api/invoice.php')) ?>',
             formData
         );
 
