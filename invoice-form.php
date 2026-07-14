@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$pageTitle = 'Create Hospital Invoice';
+$pageTitle = 'Create Hospital Bill';
 
 require_once __DIR__ . '/includes/bootstrap.php';
 
@@ -44,7 +44,7 @@ if ($invoiceId > 0) {
     ]);
 
     $existingItems = $itemStmt->fetchAll();
-    $pageTitle = 'Edit Hospital Invoice';
+    $pageTitle = 'Edit Hospital Bill';
 }
 
 /*
@@ -141,6 +141,9 @@ include __DIR__ . '/includes/layout-start.php';
     href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
     rel="stylesheet"
 >
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 
 <style>
 .hospital-invoice-page {
@@ -157,6 +160,10 @@ include __DIR__ . '/includes/layout-start.php';
 
 .invoice-page-head h1 {
     margin: 8px 0 4px;
+    font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: clamp(1.65rem, 2vw, 2.15rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
 }
 
 .invoice-card {
@@ -244,17 +251,26 @@ include __DIR__ . '/includes/layout-start.php';
 
 .invoice-item-grid {
     display: grid;
-    grid-template-columns:
-        minmax(260px, 2.1fr)
-        minmax(90px, .55fr)
-        minmax(120px, .8fr)
-        minmax(120px, .8fr)
-        minmax(110px, .75fr)
-        minmax(100px, .65fr)
-        minmax(120px, .8fr)
-        auto;
-    gap: 10px;
+    grid-template-columns: minmax(280px, 1.6fr) minmax(140px, .75fr) minmax(150px, .8fr) minmax(120px, .65fr) minmax(160px, .85fr) auto;
+    gap: 14px;
     align-items: end;
+}
+
+.amount-field .form-control,
+.discounted-field .form-control {
+    min-height: 46px;
+    font-size: 16px;
+    font-weight: 800;
+    text-align: right;
+    background: var(--body-bg);
+}
+
+.service-rate-note {
+    min-height: 18px;
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 650;
 }
 
 .rate-caption {
@@ -413,33 +429,15 @@ include __DIR__ . '/includes/layout-start.php';
     opacity: .78;
 }
 
-@media (max-width: 1250px) {
+@media (max-width: 991.98px) {
     .invoice-item-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .invoice-item-grid .service-field {
-        grid-column: span 2;
+        grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) auto;
     }
 }
 
 @media (max-width: 991.98px) {
     .hospital-meta-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .invoice-item-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .invoice-item-grid .service-field {
-        grid-column: 1 / -1;
-    }
-
-    .invoice-item-grid .remove-field {
-        display: flex;
-        justify-content: flex-end;
-        align-items: end;
     }
 }
 
@@ -471,8 +469,8 @@ include __DIR__ . '/includes/layout-start.php';
         grid-template-columns: 1fr;
     }
 
-    .invoice-item-grid .service-field {
-        grid-column: auto;
+    .invoice-item-grid {
+        grid-template-columns: 1fr;
     }
 
     .invoice-item-grid .remove-field {
@@ -504,13 +502,12 @@ include __DIR__ . '/includes/layout-start.php';
 
             <h1>
                 <?= $invoiceId > 0
-                    ? 'Edit Hospital Invoice'
-                    : 'Create Hospital Invoice' ?>
+                    ? 'Edit Hospital Bill'
+                    : 'Create Hospital Bill' ?>
             </h1>
 
             <p class="mb-0 text-muted">
-                Select a hospital and add reporting services.
-                Hospital-specific rates are loaded automatically.
+                Select the hospital and add the required services. Service rates and totals are calculated automatically.
             </p>
         </div>
 
@@ -524,6 +521,11 @@ include __DIR__ . '/includes/layout-start.php';
     </div>
 
     <form id="invoiceForm" novalidate>
+        <input
+            type="hidden"
+            name="backend_action"
+            value="save_invoice"
+        >
         <input
             type="hidden"
             name="csrf_token"
@@ -780,6 +782,28 @@ include __DIR__ . '/includes/layout-start.php';
                 <div class="row g-3 mt-1">
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">
+                            Total Patients / Studies Covered
+                        </label>
+
+                        <input
+                            class="form-control"
+                            type="number"
+                            name="total_patient_count"
+                            id="totalPatientCount"
+                            value="<?= (int)($invoice['total_patient_count'] ?? 0) ?>"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            placeholder="Example: 48"
+                        >
+
+                        <div class="form-text">
+                            Reference only. This count does not affect invoice calculation.
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
                             Patient Name
                         </label>
 
@@ -787,7 +811,7 @@ include __DIR__ . '/includes/layout-start.php';
                             class="form-control"
                             name="patient_name"
                             value="<?= e($invoice['patient_name'] ?? '') ?>"
-                            placeholder="Optional"
+                            placeholder="Optional for consolidated billing"
                         >
                     </div>
 
@@ -822,9 +846,9 @@ include __DIR__ . '/includes/layout-start.php';
         <section class="invoice-card mb-3">
             <div class="invoice-card-header">
                 <div>
-                    <h2>Invoice Services</h2>
+                    <h2>Services & Charges</h2>
                     <small class="text-muted">
-                        Add one or more hospital reporting services.
+                        Choose a service and its applicable hospital rate will be added automatically.
                     </small>
                 </div>
 
@@ -869,14 +893,14 @@ include __DIR__ . '/includes/layout-start.php';
                             class="form-control"
                             name="notes"
                             rows="5"
-                            placeholder="Enter invoice notes, billing period or instructions..."
+                            placeholder="Enter notes or instructions..."
                         ><?= e($invoice['notes'] ?? '') ?></textarea>
                     </div>
 
                     <div class="col-lg-6">
                         <div class="invoice-summary">
                             <div class="invoice-summary-row">
-                                <span>Subtotal</span>
+                                <span>Service Total</span>
                                 <strong id="subtotalText">₹0.00</strong>
                             </div>
 
@@ -932,9 +956,7 @@ include __DIR__ . '/includes/layout-start.php';
     <article class="invoice-item">
         <div class="invoice-item-grid">
             <div class="service-field">
-                <label class="form-label fw-semibold">
-                    Service
-                </label>
+                <label class="form-label fw-semibold">Service</label>
 
                 <select class="form-select item-service">
                     <option value="">Select service...</option>
@@ -944,7 +966,6 @@ include __DIR__ . '/includes/layout-start.php';
                             value="<?= (int)$service['id'] ?>"
                             data-standard-rate="<?= e($service['standard_rate']) ?>"
                             data-tax="<?= e($service['tax_percent']) ?>"
-                            data-unit="<?= e($service['unit_name']) ?>"
                         >
                             <?= e(
                                 $service['service_code'] .
@@ -958,55 +979,24 @@ include __DIR__ . '/includes/layout-start.php';
                     <?php endforeach; ?>
                 </select>
 
-                <div class="rate-caption">
-                    Select a service to load the hospital rate.
+                <div class="service-rate-note rate-caption">
+                    Select a service to calculate the amount automatically.
                 </div>
             </div>
 
-            <div>
-                <label class="form-label fw-semibold">Qty</label>
-
+            <div class="amount-field">
+                <label class="form-label fw-semibold">Amount</label>
                 <input
                     type="number"
-                    class="form-control item-quantity"
-                    value="1"
-                    min="0.001"
-                    step="0.001"
-                >
-            </div>
-
-            <div>
-                <label class="form-label fw-semibold">
-                    Standard Rate
-                </label>
-
-                <input
-                    type="number"
-                    class="form-control item-standard-rate"
-                    value="0"
+                    class="form-control item-amount"
+                    value="0.00"
+                    step="0.01"
                     readonly
                 >
             </div>
 
             <div>
-                <label class="form-label fw-semibold">
-                    Applied Rate
-                </label>
-
-                <input
-                    type="number"
-                    class="form-control item-applied-rate"
-                    value="0"
-                    min="0"
-                    step="0.01"
-                >
-            </div>
-
-            <div>
-                <label class="form-label fw-semibold">
-                    Discount
-                </label>
-
+                <label class="form-label fw-semibold">Discount</label>
                 <select class="form-select item-discount-type">
                     <option value="none">None</option>
                     <option value="amount">Amount</option>
@@ -1015,27 +1005,26 @@ include __DIR__ . '/includes/layout-start.php';
             </div>
 
             <div>
-                <label class="form-label fw-semibold">
-                    Value
-                </label>
-
+                <label class="form-label fw-semibold">Value</label>
                 <input
                     type="number"
                     class="form-control item-discount-value"
                     value="0"
                     min="0"
                     step="0.01"
+                    disabled
                 >
             </div>
 
-            <div>
-                <label class="form-label fw-semibold">
-                    Line Total
-                </label>
-
-                <div class="line-total-box item-line-total">
-                    ₹0.00
-                </div>
+            <div class="discounted-field">
+                <label class="form-label fw-semibold">Discounted Amount</label>
+                <input
+                    type="number"
+                    class="form-control item-discounted-amount"
+                    value="0.00"
+                    step="0.01"
+                    readonly
+                >
             </div>
 
             <div class="remove-field">
@@ -1049,11 +1038,7 @@ include __DIR__ . '/includes/layout-start.php';
             </div>
         </div>
 
-        <input
-            type="hidden"
-            class="item-tax"
-            value="0"
-        >
+        <input type="hidden" class="item-tax" value="0">
     </article>
 </template>
 
@@ -1211,6 +1196,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 'discount_type' => (string)$item['discount_type'],
                 'discount_value' => (float)$item['discount_value'],
                 'tax_percent' => (float)$item['tax_percent'],
+                'billing_from' => (string)($item['billing_from'] ?? ''),
+                'billing_to' => (string)($item['billing_to'] ?? ''),
+                'rate_basis' => (string)($item['rate_basis'] ?? 'monthly'),
+                'description' => (string)($item['description'] ?? ''),
             ],
             $existingItems
         ),
@@ -1412,9 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     invoiceDate.addEventListener('change', () => {
-        const option = hospitalSelect.options[
-            hospitalSelect.selectedIndex
-        ];
+        const option = hospitalSelect.options[hospitalSelect.selectedIndex];
 
         if (option && option.value) {
             setDueDateByCreditDays(
@@ -1447,47 +1434,39 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsContainer.appendChild(row);
         initializeServiceSelect(row);
 
-        row.querySelector('.item-service').value =
-            data.service_id || '';
+        const serviceSelect = row.querySelector('.item-service');
+        serviceSelect.value = data.service_id || '';
+        $(serviceSelect).trigger('change.select2');
 
-        $(row.querySelector('.item-service')).trigger('change.select2');
-
-        row.querySelector('.item-quantity').value =
-            data.quantity ?? 1;
-
-        row.querySelector('.item-standard-rate').value =
-            data.standard_rate ?? 0;
-
-        row.querySelector('.item-applied-rate').value =
-            data.applied_rate ?? 0;
-
-        row.querySelector('.item-discount-type').value =
-            data.discount_type || 'none';
-
-        row.querySelector('.item-discount-value').value =
-            data.discount_value ?? 0;
+        row.querySelector('.item-amount').value = Number(
+            data.applied_rate ?? 0
+        ).toFixed(2);
 
         row.querySelector('.item-tax').value =
             data.tax_percent ?? 0;
 
-        row
-            .querySelectorAll(
-                '.item-quantity,' +
-                '.item-applied-rate,' +
-                '.item-discount-type,' +
-                '.item-discount-value'
-            )
-            .forEach(input => {
-                input.addEventListener('input', calculateInvoice);
-                input.addEventListener('change', calculateInvoice);
-            });
+        const discountType = row.querySelector('.item-discount-type');
+        const discountValue = row.querySelector('.item-discount-value');
+
+        discountType.value = data.discount_type || 'none';
+        discountValue.value = Number(data.discount_value ?? 0);
+        discountValue.disabled = discountType.value === 'none';
+
+        discountType.addEventListener('change', () => {
+            discountValue.disabled = discountType.value === 'none';
+            if (discountType.value === 'none') {
+                discountValue.value = '0';
+            }
+            calculateInvoice();
+        });
+
+        discountValue.addEventListener('input', calculateInvoice);
+        discountValue.addEventListener('change', calculateInvoice);
 
         row
             .querySelector('.remove-item')
             .addEventListener('click', () => {
-                $(row.querySelector('.item-service'))
-                    .select2('destroy');
-
+                $(serviceSelect).select2('destroy');
                 row.remove();
                 updateEmptyState();
                 calculateInvoice();
@@ -1509,6 +1488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hospitalId = hospitalSelect.value;
         const serviceSelect = row.querySelector('.item-service');
         const serviceId = serviceSelect.value;
+        const requestedServiceId = serviceId;
 
         const selectedOption = serviceSelect.options[
             serviceSelect.selectedIndex
@@ -1518,99 +1498,80 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedOption?.dataset.standardRate || 0
         );
 
-        const standardInput = row.querySelector(
-            '.item-standard-rate'
-        );
-
-        const appliedInput = row.querySelector(
-            '.item-applied-rate'
-        );
-
+        const amountInput = row.querySelector('.item-amount');
         const taxInput = row.querySelector('.item-tax');
         const caption = row.querySelector('.rate-caption');
 
-        standardInput.value = standardRate.toFixed(2);
-
         if (!serviceId) {
-            appliedInput.value = '0.00';
+            amountInput.value = '0.00';
+            taxInput.value = '0';
             caption.textContent =
-                'Select a service to load the hospital rate.';
-
+                'Select a service to calculate the amount automatically.';
             calculateInvoice();
             return;
         }
+
+        taxInput.value = selectedOption?.dataset.tax || 0;
 
         if (!hospitalId) {
-            appliedInput.value = standardRate.toFixed(2);
-            taxInput.value = selectedOption?.dataset.tax || 0;
-
-            caption.innerHTML =
-                'Standard rate applied. ' +
-                '<span>Select a hospital to load its agreed rate.</span>';
-
+            amountInput.value = standardRate.toFixed(2);
+            caption.textContent =
+                `Standard service rate: ₹${standardRate.toFixed(2)}`;
             calculateInvoice();
             return;
         }
 
-        caption.textContent = 'Loading hospital rate...';
+        caption.textContent = 'Calculating hospital rate...';
 
         try {
             const url =
                 '<?= e(app_url('api/service-rate.php')) ?>' +
-                '?client_id=' +
-                encodeURIComponent(hospitalId) +
-                '&service_id=' +
-                encodeURIComponent(serviceId) +
-                '&date=' +
-                encodeURIComponent(invoiceDate.value);
+                '?client_id=' + encodeURIComponent(hospitalId) +
+                '&service_id=' + encodeURIComponent(serviceId) +
+                '&date=' + encodeURIComponent(invoiceDate.value);
 
             const response = await fetch(url, {
                 credentials: 'same-origin',
-                headers: {
-                    'Accept': 'application/json'
-                }
+                headers: {'Accept': 'application/json'}
             });
 
             const result = await response.json();
 
             if (!result.success) {
-                throw new Error(result.message);
+                throw new Error(result.message || 'Rate unavailable.');
+            }
+
+            if (serviceSelect.value !== requestedServiceId) {
+                return;
             }
 
             const appliedRate = Number(
-                result.data.applied_rate || standardRate
+                result.data.applied_rate ?? standardRate
             );
 
-            if (!preserveExisting || Number(appliedInput.value) <= 0) {
-                appliedInput.value = appliedRate.toFixed(2);
-            }
-
+            amountInput.value = appliedRate.toFixed(2);
             taxInput.value = Number(
-                result.data.tax_percent || 0
+                result.data.tax_percent ?? selectedOption?.dataset.tax ?? 0
             );
 
-            const isHospitalRate =
+            const isAgreedRate =
                 Math.abs(appliedRate - standardRate) > 0.0001;
 
-            caption.innerHTML = isHospitalRate
-                ? `Standard ₹${standardRate.toFixed(2)} · ` +
-                  `<span class="hospital-rate">Hospital rate ` +
-                  `₹${appliedRate.toFixed(2)}</span>`
-                : `Standard rate ₹${standardRate.toFixed(2)} applied`;
-
-            calculateInvoice();
+            caption.innerHTML = isAgreedRate
+                ? `Hospital agreed rate: <span class="hospital-rate">₹${appliedRate.toFixed(2)}</span>`
+                : `Standard service rate: ₹${appliedRate.toFixed(2)}`;
         } catch (error) {
-            if (!preserveExisting || Number(appliedInput.value) <= 0) {
-                appliedInput.value = standardRate.toFixed(2);
+            if (serviceSelect.value !== requestedServiceId) {
+                return;
             }
 
+            amountInput.value = standardRate.toFixed(2);
             taxInput.value = selectedOption?.dataset.tax || 0;
-
             caption.textContent =
                 'Hospital rate unavailable. Standard rate applied.';
-
-            calculateInvoice();
         }
+
+        calculateInvoice();
     }
 
     function reloadAllRates() {
@@ -1632,30 +1593,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return Array.from(
             itemsContainer.querySelectorAll('.invoice-item')
         )
-            .map(row => {
-                return {
-                    service_id: Number(
-                        row.querySelector('.item-service').value
-                    ),
-                    quantity: Number(
-                        row.querySelector('.item-quantity').value || 0
-                    ),
-                    standard_rate: Number(
-                        row.querySelector('.item-standard-rate').value || 0
-                    ),
-                    applied_rate: Number(
-                        row.querySelector('.item-applied-rate').value || 0
-                    ),
-                    discount_type:
-                        row.querySelector('.item-discount-type').value,
-                    discount_value: Number(
-                        row.querySelector('.item-discount-value').value || 0
-                    ),
-                    tax_percent: Number(
-                        row.querySelector('.item-tax').value || 0
-                    )
-                };
-            })
+            .map(row => ({
+                service_id: Number(
+                    row.querySelector('.item-service').value
+                ),
+
+                // Compatibility values are stored internally only.
+                // They are not shown to the user and do not affect quantity.
+                quantity: 1,
+                standard_rate: Number(
+                    row.querySelector('.item-amount').value || 0
+                ),
+                applied_rate: Number(
+                    row.querySelector('.item-amount').value || 0
+                ),
+                discount_type:
+                    row.querySelector('.item-discount-type').value,
+                discount_value: Number(
+                    row.querySelector('.item-discount-value').value || 0
+                ),
+                tax_percent: Number(
+                    row.querySelector('.item-tax').value || 0
+                ),
+                billing_from: invoiceDate.value,
+                billing_to: invoiceDate.value,
+                rate_basis: 'fixed',
+                description: ''
+            }))
             .filter(item => item.service_id > 0);
     }
 
@@ -1667,44 +1631,38 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsContainer
             .querySelectorAll('.invoice-item')
             .forEach(row => {
-                const quantity = Number(
-                    row.querySelector('.item-quantity').value || 0
+                const amount = Number(
+                    row.querySelector('.item-amount').value || 0
                 );
-
-                const rate = Number(
-                    row.querySelector('.item-applied-rate').value || 0
-                );
-
                 const discountType =
                     row.querySelector('.item-discount-type').value;
-
-                const discountValue = Number(
+                let discountValue = Number(
                     row.querySelector('.item-discount-value').value || 0
                 );
-
                 const taxPercent = Number(
                     row.querySelector('.item-tax').value || 0
                 );
 
-                const gross = quantity * rate;
+                if (discountType === 'percentage') {
+                    discountValue = Math.min(100, Math.max(0, discountValue));
+                }
 
-                const discount =
+                const discountAmount =
                     discountType === 'percentage'
-                        ? gross * discountValue / 100
+                        ? amount * discountValue / 100
                         : discountType === 'amount'
-                            ? Math.min(gross, discountValue)
+                            ? Math.min(amount, Math.max(0, discountValue))
                             : 0;
 
-                const taxable = Math.max(0, gross - discount);
-                const tax = taxable * taxPercent / 100;
-                const lineTotal = taxable + tax;
+                const discountedAmount = Math.max(0, amount - discountAmount);
+                const taxAmount = discountedAmount * taxPercent / 100;
 
-                subtotal += gross;
-                discountTotal += discount;
-                taxTotal += tax;
+                row.querySelector('.item-discounted-amount').value =
+                    discountedAmount.toFixed(2);
 
-                row.querySelector('.item-line-total').textContent =
-                    '₹' + lineTotal.toFixed(2);
+                subtotal += amount;
+                discountTotal += discountAmount;
+                taxTotal += taxAmount;
             });
 
         const beforeRound = subtotal - discountTotal + taxTotal;
@@ -1713,16 +1671,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('subtotalText').textContent =
             '₹' + subtotal.toFixed(2);
-
         document.getElementById('discountText').textContent =
             '₹' + discountTotal.toFixed(2);
-
         document.getElementById('taxText').textContent =
             '₹' + taxTotal.toFixed(2);
-
         document.getElementById('roundOffText').textContent =
             '₹' + roundOff.toFixed(2);
-
         document.getElementById('grandTotalText').textContent =
             '₹' + rounded.toFixed(2);
     }
@@ -1760,16 +1714,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const invalidItem = items.find(item =>
-            item.quantity <= 0 || item.applied_rate < 0
-        );
+        const invalidItem = items.find(item => item.applied_rate < 0);
 
         if (invalidItem) {
             AppToast.show(
                 'warning',
-                'Check service quantity and rate.'
+                'One or more service amounts are invalid.'
             );
-
             return;
         }
 
@@ -1785,11 +1736,17 @@ document.addEventListener('DOMContentLoaded', () => {
             'Saving...';
 
         try {
+            const formData = new FormData(form);
+
+            formData.set('backend_action', 'save_invoice');
+            formData.set('invoice_status', mode);
+            formData.set('items_json', JSON.stringify(items));
+
             const response = await fetch(
-                '<?= e(app_url('api/invoice-save.php')) ?>',
+                '<?= e(app_url('api/invoice.php')) ?>',
                 {
                     method: 'POST',
-                    body: new FormData(form),
+                    body: formData,
                     credentials: 'same-origin',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1799,6 +1756,13 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             const raw = await response.text();
+
+            if (response.status === 404) {
+                throw new Error(
+                    'Invoice API file not found. Confirm that ' +
+                    'api/invoice.php exists inside the project api folder.'
+                );
+            }
 
             let result;
 

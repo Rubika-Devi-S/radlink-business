@@ -718,32 +718,41 @@ if (
 |--------------------------------------------------------------------------
 */
 $tableTop = max(89.0, $billCursorY + 4.0);
-$tableWidths = [15.0, 84.0, 26.0, 24.0, 25.0];
+
+/*
+ * Fixed column widths. The total is exactly 174 mm, matching the printable
+ * content width from X = 18 mm to X = 192 mm.
+ */
+$tableWidths = [12.0, 68.0, 26.0, 24.0, 22.0, 22.0];
 $tableHeaders = [
     'S.NO.',
     'SERVICES',
-    'QTY.',
-    'RATE',
+    'SERVICE RATE',
+    'DISCOUNT',
+    'VALUE',
     'AMOUNT',
 ];
+$tableAlignments = ['C', 'L', 'C', 'C', 'C', 'C'];
 
 $pdf->SetXY($pageLeft, $tableTop);
 $pdf->SetFillColor(...$themeColour);
-$pdf->SetFont('Helvetica', 'B', 7.9);
+$pdf->SetDrawColor(220, 220, 220);
+$pdf->SetLineWidth(0.18);
+$pdf->SetFont('Helvetica', 'B', 7.2);
 
 foreach ($tableHeaders as $index => $header) {
     $pdf->Cell(
         $tableWidths[$index],
         8.4,
         invoice_pdf_text($header),
+        'B',
         0,
-        0,
-        $index === 1 ? 'L' : 'C',
+        $tableAlignments[$index],
         true
     );
 }
 
-$pdf->Ln();
+$pdf->Ln(8.4);
 
 $itemCount = count($items);
 $subtotalTop = 157.0;
@@ -756,87 +765,60 @@ $rowHeight = $itemCount > 0
     ? min(
         6.4,
         max(
-            3.0,
+            3.4,
             $availableItemHeight / $itemCount
         )
     )
     : 6.4;
 
-$itemFontSize = $rowHeight < 3.8
+$itemFontSize = $rowHeight < 4.0
     ? 5.9
     : (
-        $rowHeight < 4.8
+        $rowHeight < 5.0
             ? 6.5
-            : 7.4
+            : 7.2
     );
 
-$pdf->SetFont(
-    'Helvetica',
-    '',
-    $itemFontSize
-);
+$pdf->SetFont('Helvetica', '', $itemFontSize);
+$pdf->SetDrawColor(234, 234, 234);
 
 foreach ($items as $index => $item) {
     $pdf->SetX($pageLeft);
-    $pdf->Cell(
-        $tableWidths[0],
-        $rowHeight,
+
+    $discountType = (string)($item['discount_type'] ?? 'none');
+    $discountValue = (float)($item['discount_value'] ?? 0);
+    $discountAmount = (float)($item['discount_amount'] ?? 0);
+
+    $discountDisplayText = match ($discountType) {
+        'percentage' => rtrim(
+            rtrim(number_format($discountValue, 2, '.', ''), '0'),
+            '.'
+        ) . '%',
+        'amount' => number_format($discountAmount, 2),
+        default => '-',
+    };
+
+    $rowValues = [
         (string)($index + 1),
-        0,
-        0,
-        'C'
-    );
+        invoice_pdf_text((string)$item['service_name_snapshot']),
+        number_format((float)$item['applied_rate'], 2),
+        invoice_pdf_text($discountDisplayText),
+        number_format($discountAmount, 2),
+        number_format((float)$item['line_total'], 2),
+    ];
 
-    $pdf->Cell(
-        $tableWidths[1],
-        $rowHeight,
-        invoice_pdf_text(
-            (string)$item['service_name_snapshot']
-        ),
-        0,
-        0,
-        'L'
-    );
+    $rowAlignments = ['C', 'L', 'C', 'C', 'C', 'C'];
 
-    $quantityText =
-        invoice_compact_quantity(
-            (float)$item['quantity']
-        ) .
-        ' ' .
-        (string)$item['unit_name'];
-
-    $pdf->Cell(
-        $tableWidths[2],
-        $rowHeight,
-        invoice_pdf_text($quantityText),
-        0,
-        0,
-        'C'
-    );
-
-    $pdf->Cell(
-        $tableWidths[3],
-        $rowHeight,
-        number_format(
-            (float)$item['applied_rate'],
-            2
-        ),
-        0,
-        0,
-        'R'
-    );
-
-    $pdf->Cell(
-        $tableWidths[4],
-        $rowHeight,
-        number_format(
-            (float)$item['line_total'],
-            2
-        ),
-        0,
-        1,
-        'R'
-    );
+    foreach ($rowValues as $columnIndex => $value) {
+        $pdf->Cell(
+            $tableWidths[$columnIndex],
+            $rowHeight,
+            $value,
+            'B',
+            $columnIndex === count($rowValues) - 1 ? 1 : 0,
+            $rowAlignments[$columnIndex]
+        );
+    }
 }
 
 /*
@@ -846,34 +828,23 @@ foreach ($items as $index => $item) {
 */
 $pdf->SetXY($pageLeft, $subtotalTop);
 $pdf->SetFillColor(...$themeColour);
+$pdf->SetDrawColor(220, 220, 220);
 $pdf->SetFont('Helvetica', 'B', 8.1);
 
-$totalQuantity = array_sum(
-    array_map(
-        static fn (array $item): float =>
-            (float)$item['quantity'],
-        $items
-    )
-);
-
-$pdf->Cell(99, 8.5, 'SUBTOTAL', 0, 0, 'C', true);
 $pdf->Cell(
-    26,
+    array_sum(array_slice($tableWidths, 0, 5)),
     8.5,
-    invoice_compact_quantity($totalQuantity),
+    'SUBTOTAL',
+    'T',
     0,
-    0,
-    'C',
+    'R',
     true
 );
 $pdf->Cell(
-    49,
+    $tableWidths[5],
     8.5,
-    'Rs. ' . number_format(
-        (float)$invoice['subtotal'],
-        2
-    ),
-    0,
+    'Rs. ' . number_format((float)$invoice['subtotal'], 2),
+    'T',
     1,
     'R',
     true

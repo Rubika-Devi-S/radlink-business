@@ -367,7 +367,7 @@ include __DIR__ . '/includes/layout-start.php';
 <table class="table align-middle mb-0 invoice-table">
 <thead>
 <tr>
-    <th>Invoice</th><th>Hospital / Client</th><th>Patient / Reference</th><th>Invoice Date</th><th>Due Date</th><th>FY</th><th>Total</th><th>Received</th><th>Balance</th><th>Invoice Status</th><th>Payment Status</th><th>Actions</th>
+    <th>Invoice</th><th>Hospital / Client</th><th>Patient / Reference</th><th>Patients / Cases</th><th>Invoice Date</th><th>Due Date</th><th>FY</th><th>Total</th><th>Received</th><th>Balance</th><th>Invoice Status</th><th>Payment Status</th><th>Actions</th>
 </tr>
 </thead>
 <tbody>
@@ -442,7 +442,7 @@ $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status']
     <div class="invoice-mobile-grid">
         <div><small>Total</small><strong>₹<?= number_format((float)$invoice['grand_total'], 2) ?></strong></div>
         <div><small>Balance</small><strong>₹<?= number_format((float)$invoice['balance_amount'], 2) ?></strong></div>
-        <div><small>Patient</small><strong><?= e($invoice['patient_name'] ?: '—') ?></strong></div>
+        <div><small>Patients / Cases</small><strong><?= number_format((float)($invoice['patient_count'] ?? 0), 0) ?></strong></div>
         <div><small>Payment</small><span class="invoice-pill <?= e($paymentClass) ?>"><?= e($paymentLabel) ?></span></div>
     </div>
     <div class="invoice-actions mt-3">
