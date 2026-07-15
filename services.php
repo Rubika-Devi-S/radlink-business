@@ -48,6 +48,28 @@ include __DIR__ . '/includes/layout-start.php';
 .form-help{font-size:11px;color:var(--text-muted)}
 @media(max-width:767.98px){.module-search{max-width:none;width:100%}.module-toolbar{align-items:stretch}}
 </style>
+<style>
+.action-icon-btn{
+    width:36px;
+    height:36px;
+    padding:0 !important;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+}
+.action-icon-btn svg,
+.action-icon-btn i{
+    width:17px;
+    height:17px;
+}
+.action-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+</style>
+
 
 <div class="page-head">
     <div><span class="badge-soft">SERVICES</span><h1 class="mt-2">Service List</h1><p>Manage scan and radiology reporting services.</p></div>
@@ -77,7 +99,7 @@ include __DIR__ . '/includes/layout-start.php';
     <td><span class="code-pill"><?= e($service['service_code']) ?></span><div class="fw-bold mt-1"><?= e($service['service_name']) ?></div></td>
     <td><?= e($service['category_name']) ?></td><td><?= e($service['unit_name']) ?></td><td>₹<?= number_format((float)$service['standard_rate'],2) ?></td><td><?= number_format((float)$service['tax_percent'],2) ?>%</td><td><?= e($service['hsn_sac_code'] ?: '—') ?></td>
     <td><span class="status-badge <?= $service['status']==='active'?'status-active':'status-inactive' ?>"><?= e(ucfirst($service['status'])) ?></span></td>
-    <td><div class="action-group"><button class="btn btn-sm btn-outline-primary" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button><button class="btn btn-sm btn-outline-secondary" data-toggle-service data-id="<?= (int)$service['id'] ?>">Status</button><button class="btn btn-sm btn-outline-danger" data-delete-service data-id="<?= (int)$service['id'] ?>">Delete</button></div></td>
+    <td><div class="action-group"><button class="btn btn-sm btn-outline-primary" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button><button class="btn btn-sm btn-outline-secondary" data-toggle-service data-id="<?= (int)$service['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button><button class="btn btn-sm btn-outline-danger" data-delete-service data-id="<?= (int)$service['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button></div></td>
    </tr>
   <?php endforeach; ?>
   </tbody></table>
@@ -88,7 +110,7 @@ include __DIR__ . '/includes/layout-start.php';
   <article class="card-ui mobile-record" data-service-row data-category="<?= (int)$service['service_category_id'] ?>" data-search="<?= e(strtolower($service['service_code'].' '.$service['service_name'].' '.$service['category_name'].' '.$service['hsn_sac_code'])) ?>">
    <div class="d-flex justify-content-between gap-2"><div><span class="code-pill"><?= e($service['service_code']) ?></span><strong class="d-block mt-2"><?= e($service['service_name']) ?></strong><small class="text-muted"><?= e($service['category_name']) ?></small></div><span class="status-badge <?= $service['status']==='active'?'status-active':'status-inactive' ?>"><?= e(ucfirst($service['status'])) ?></span></div>
    <div class="row g-2 mt-2 small"><div class="col-6">Rate: <strong>₹<?= number_format((float)$service['standard_rate'],2) ?></strong></div><div class="col-6">Tax: <strong><?= number_format((float)$service['tax_percent'],2) ?>%</strong></div></div>
-   <div class="action-group mt-3"><button class="btn btn-sm btn-outline-primary" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button><button class="btn btn-sm btn-outline-secondary" data-toggle-service data-id="<?= (int)$service['id'] ?>">Status</button><button class="btn btn-sm btn-outline-danger ms-auto" data-delete-service data-id="<?= (int)$service['id'] ?>">Delete</button></div>
+   <div class="action-group mt-3"><button class="btn btn-sm btn-outline-primary" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button><button class="btn btn-sm btn-outline-secondary" data-toggle-service data-id="<?= (int)$service['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button><button class="btn btn-sm btn-outline-danger ms-auto" data-delete-service data-id="<?= (int)$service['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button></div>
   </article>
  <?php endforeach; ?>
  </div>

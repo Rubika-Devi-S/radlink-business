@@ -230,25 +230,347 @@ include __DIR__ . '/includes/layout-start.php';
 ?>
 
 <style>
-.invoice-filter-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:12px}
-.invoice-filter-row-2{display:grid;grid-template-columns:1fr 1fr .7fr auto auto;gap:12px;align-items:end;margin-top:12px}
-.invoice-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
-.invoice-stat{padding:16px;border:1px solid var(--border-soft);border-radius:16px;background:var(--card-bg);box-shadow:var(--shadow)}
-.invoice-stat small{display:block;color:var(--text-muted);font-weight:700;margin-bottom:6px}
-.invoice-stat strong{font-size:20px;font-weight:900;overflow-wrap:anywhere}
-.invoice-table{min-width:1200px}
-.invoice-number{font-weight:900;text-decoration:none}
-.invoice-client{font-weight:850}
-.invoice-meta{font-size:11px;color:var(--text-muted);margin-top:3px}
-.invoice-money{font-weight:850;white-space:nowrap}
-.invoice-pill{display:inline-flex;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:850;white-space:nowrap}
-.status-draft{background:#f1f5f9;color:#475569}.status-issued,.pay-paid{background:#dcfce7;color:#15803d}.status-cancelled,.pay-cancelled{background:#fee2e2;color:#b91c1c}.pay-unpaid,.pay-overdue{background:#ffedd5;color:#c2410c}.pay-partially_paid{background:#fef3c7;color:#a16207}
-.invoice-actions{display:flex;flex-wrap:wrap;gap:6px}.invoice-overdue-row{background:color-mix(in srgb,#fff7ed 58%,transparent)}
-.invoice-mobile-list{display:none}.invoice-mobile-card{padding:15px;border:1px solid var(--border-soft);border-radius:16px;background:var(--card-bg)}.invoice-mobile-card+.invoice-mobile-card{margin-top:12px}
-.invoice-mobile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.invoice-mobile-grid small{display:block;color:var(--text-muted);font-weight:700}
-.invoice-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:16px}
-@media(max-width:1250px){.invoice-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.invoice-filter-row-2{grid-template-columns:repeat(3,minmax(0,1fr))}.invoice-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:767.98px){.invoice-filter-grid,.invoice-filter-row-2,.invoice-stats{grid-template-columns:1fr}.invoice-filter-row-2 .btn{width:100%}.invoice-desktop{display:none}.invoice-mobile-list{display:block}.invoice-pagination{flex-direction:column;align-items:stretch}.pagination{justify-content:center;flex-wrap:wrap}}
+.invoice-filter-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    gap: 12px
+}
+
+.invoice-filter-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr .7fr auto auto;
+    gap: 12px;
+    align-items: end;
+    margin-top: 12px
+}
+
+.invoice-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px
+}
+
+.invoice-stat {
+    padding: 16px;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: var(--card-bg);
+    box-shadow: var(--shadow)
+}
+
+.invoice-stat small {
+    display: block;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 6px
+}
+
+.invoice-stat strong {
+    font-size: 20px;
+    font-weight: 900;
+    overflow-wrap: anywhere
+}
+
+.invoice-desktop {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.invoice-table {
+    width: 100%;
+    min-width: 1500px;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.invoice-table th,
+.invoice-table td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Normal font for invoice table data */
+.invoice-table td,
+.invoice-table td *,
+.invoice-table .invoice-client,
+.invoice-table .invoice-money,
+.invoice-table .invoice-number {
+    font-weight: 400;
+}
+
+.invoice-table th {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 11px 10px;
+}
+
+.invoice-table td {
+    padding: 12px 10px;
+}
+
+.invoice-table th:nth-child(2),
+.invoice-table td:nth-child(2),
+.invoice-table th:nth-child(3),
+.invoice-table td:nth-child(3) {
+    white-space: normal;
+}
+
+.invoice-table th:nth-child(1),
+.invoice-table td:nth-child(1) {
+    min-width: 120px
+}
+
+.invoice-table th:nth-child(2),
+.invoice-table td:nth-child(2) {
+    min-width: 205px
+}
+
+.invoice-table th:nth-child(3),
+.invoice-table td:nth-child(3) {
+    min-width: 145px
+}
+
+.invoice-table th:nth-child(4),
+.invoice-table td:nth-child(4) {
+    min-width: 115px
+}
+
+.invoice-table th:nth-child(5),
+.invoice-table td:nth-child(5) {
+    min-width: 115px
+}
+
+.invoice-table th:nth-child(6),
+.invoice-table td:nth-child(6) {
+    min-width: 105px
+}
+
+.invoice-table th:nth-child(7),
+.invoice-table td:nth-child(7) {
+    min-width: 85px
+}
+
+.invoice-table th:nth-child(8),
+.invoice-table td:nth-child(8),
+.invoice-table th:nth-child(9),
+.invoice-table td:nth-child(9),
+.invoice-table th:nth-child(10),
+.invoice-table td:nth-child(10) {
+    min-width: 105px
+}
+
+.invoice-table th:nth-child(11),
+.invoice-table td:nth-child(11),
+.invoice-table th:nth-child(12),
+.invoice-table td:nth-child(12) {
+    min-width: 125px
+}
+
+.invoice-table th:nth-child(13),
+.invoice-table td:nth-child(13) {
+    min-width: 100px
+}
+
+.invoice-table .col-invoice {
+    width: 120px
+}
+
+.invoice-table .col-hospital {
+    width: 205px
+}
+
+.invoice-table .col-patient {
+    width: 145px
+}
+
+.invoice-table .col-cases {
+    width: 115px
+}
+
+.invoice-table .col-date {
+    width: 115px
+}
+
+.invoice-table .col-fy {
+    width: 85px
+}
+
+.invoice-table .col-money {
+    width: 105px
+}
+
+.invoice-table .col-status {
+    width: 125px
+}
+
+.invoice-table .col-actions {
+    width: 100px
+}
+
+.invoice-number {
+    text-decoration: none
+}
+
+.invoice-client {
+    line-height: 1.35
+}
+
+.invoice-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px
+}
+
+.invoice-money {
+    white-space: nowrap
+}
+
+.invoice-pill {
+    display: inline-flex;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 850;
+    white-space: nowrap
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569
+}
+
+.status-issued,
+.pay-paid {
+    background: #dcfce7;
+    color: #15803d
+}
+
+.status-cancelled,
+.pay-cancelled {
+    background: #fee2e2;
+    color: #b91c1c
+}
+
+.pay-unpaid,
+.pay-overdue {
+    background: #ffedd5;
+    color: #c2410c
+}
+
+.pay-partially_paid {
+    background: #fef3c7;
+    color: #a16207
+}
+
+.invoice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px
+}
+
+.invoice-overdue-row {
+    background: color-mix(in srgb, #fff7ed 58%, transparent)
+}
+
+.invoice-mobile-list {
+    display: none
+}
+
+.invoice-mobile-card {
+    padding: 15px;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: var(--card-bg)
+}
+
+.invoice-mobile-card+.invoice-mobile-card {
+    margin-top: 12px
+}
+
+.invoice-mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px
+}
+
+.invoice-mobile-grid small {
+    display: block;
+    color: var(--text-muted);
+    font-weight: 700
+}
+
+.invoice-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-top: 16px
+}
+
+@media(max-width:1250px) {
+    .invoice-filter-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+
+    .invoice-filter-row-2 {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+
+    .invoice-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+}
+
+@media(max-width:767.98px) {
+
+    .invoice-filter-grid,
+    .invoice-filter-row-2,
+    .invoice-stats {
+        grid-template-columns: 1fr
+    }
+
+    .invoice-filter-row-2 .btn {
+        width: 100%
+    }
+
+    .invoice-desktop {
+        display: none
+    }
+
+    .invoice-mobile-list {
+        display: block
+    }
+
+    .invoice-pagination {
+        flex-direction: column;
+        align-items: stretch
+    }
+
+    .pagination {
+        justify-content: center;
+        flex-wrap: wrap
+    }
+}
+
+.action-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    padding: 0 !important;
+}
+
+.action-icon-btn i {
+    width: 16px;
+    height: 16px;
+}
 </style>
 
 <div class="page-head">
@@ -264,119 +586,165 @@ include __DIR__ . '/includes/layout-start.php';
 </div>
 
 <section class="card-ui p-3 p-lg-4 mb-3">
-<form method="get">
-    <div class="invoice-filter-grid">
-        <div>
-            <label class="form-label fw-semibold">Search</label>
-            <div class="input-group">
-                <span class="input-group-text"><i data-lucide="search"></i></span>
-                <input class="form-control" type="search" name="q" value="<?= e($search) ?>" placeholder="Invoice, hospital, client, patient, reference...">
+    <form method="get">
+        <div class="invoice-filter-grid">
+            <div>
+                <label class="form-label fw-semibold">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i data-lucide="search"></i></span>
+                    <input class="form-control" type="search" name="q" value="<?= e($search) ?>"
+                        placeholder="Invoice, hospital, client, patient, reference...">
+                </div>
             </div>
-        </div>
 
-        <div>
-            <label class="form-label fw-semibold">Hospital</label>
-            <select class="form-select" name="hospital_id" id="hospitalFilter">
-                <option value="0">All Hospitals</option>
-                <?php foreach ($hospitals as $hospital): ?>
-                    <option value="<?= (int)$hospital['id'] ?>" <?= $hospitalId === (int)$hospital['id'] ? 'selected' : '' ?>>
+            <div>
+                <label class="form-label fw-semibold">Hospital</label>
+                <select class="form-select" name="hospital_id" id="hospitalFilter">
+                    <option value="0">All Hospitals</option>
+                    <?php foreach ($hospitals as $hospital): ?>
+                    <option value="<?= (int)$hospital['id'] ?>"
+                        <?= $hospitalId === (int)$hospital['id'] ? 'selected' : '' ?>>
                         <?= e($hospital['client_code'] . ' - ' . $hospital['client_name']) ?>
                     </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-        <div>
-            <label class="form-label fw-semibold">Client</label>
-            <select class="form-select" name="client_id" id="clientFilter">
-                <option value="0">All Clients</option>
-                <?php foreach ($clients as $client): ?>
-                    <option value="<?= (int)$client['id'] ?>" data-hospital-id="<?= (int)($client['parent_hospital_id'] ?? 0) ?>" <?= $clientId === (int)$client['id'] ? 'selected' : '' ?>>
+            <div>
+                <label class="form-label fw-semibold">Client</label>
+                <select class="form-select" name="client_id" id="clientFilter">
+                    <option value="0">All Clients</option>
+                    <?php foreach ($clients as $client): ?>
+                    <option value="<?= (int)$client['id'] ?>"
+                        data-hospital-id="<?= (int)($client['parent_hospital_id'] ?? 0) ?>"
+                        <?= $clientId === (int)$client['id'] ? 'selected' : '' ?>>
                         <?= e($client['client_code'] . ' - ' . $client['client_name'] . ($client['hospital_name'] ? ' / ' . $client['hospital_name'] : '')) ?>
                     </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-        <div>
-            <label class="form-label fw-semibold">Financial Year</label>
-            <select class="form-select" name="financial_year_id">
-                <option value="0">All Financial Years</option>
-                <?php foreach ($financialYears as $fy): ?>
+            <div>
+                <label class="form-label fw-semibold">Financial Year</label>
+                <select class="form-select" name="financial_year_id">
+                    <option value="0">All Financial Years</option>
+                    <?php foreach ($financialYears as $fy): ?>
                     <option value="<?= (int)$fy['id'] ?>" <?= $financialYearId === (int)$fy['id'] ? 'selected' : '' ?>>
                         <?= e($fy['year_label']) ?><?= $fy['is_current'] ? ' (Current)' : '' ?>
                     </option>
-                <?php endforeach; ?>
-            </select>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold">Invoice Status</label>
+                <select class="form-select" name="invoice_status">
+                    <option value="">All Invoice Status</option>
+                    <?php foreach ($invoiceStatuses as $value): ?>
+                    <option value="<?= e($value) ?>" <?= $invoiceStatus === $value ? 'selected' : '' ?>>
+                        <?= e($statusLabel($value)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold">Payment Status</label>
+                <select class="form-select" name="payment_status">
+                    <option value="">All Payment Status</option>
+                    <?php foreach ($paymentStatuses as $value): ?>
+                    <option value="<?= e($value) ?>" <?= $paymentStatus === $value ? 'selected' : '' ?>>
+                        <?= e($statusLabel($value)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
 
-        <div>
-            <label class="form-label fw-semibold">Invoice Status</label>
-            <select class="form-select" name="invoice_status">
-                <option value="">All Invoice Status</option>
-                <?php foreach ($invoiceStatuses as $value): ?>
-                    <option value="<?= e($value) ?>" <?= $invoiceStatus === $value ? 'selected' : '' ?>><?= e($statusLabel($value)) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div>
-            <label class="form-label fw-semibold">Payment Status</label>
-            <select class="form-select" name="payment_status">
-                <option value="">All Payment Status</option>
-                <?php foreach ($paymentStatuses as $value): ?>
-                    <option value="<?= e($value) ?>" <?= $paymentStatus === $value ? 'selected' : '' ?>><?= e($statusLabel($value)) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-    </div>
-
-    <div class="invoice-filter-row-2">
-        <div>
-            <label class="form-label fw-semibold">From Date</label>
-            <input class="form-control" type="date" name="date_from" value="<?= e($dateFrom) ?>">
-        </div>
-        <div>
-            <label class="form-label fw-semibold">To Date</label>
-            <input class="form-control" type="date" name="date_to" value="<?= e($dateTo) ?>">
-        </div>
-        <div>
-            <label class="form-label fw-semibold">Rows</label>
-            <select class="form-select" name="per_page">
-                <?php foreach ([10,20,50,100] as $size): ?>
+        <div class="invoice-filter-row-2">
+            <div>
+                <label class="form-label fw-semibold">From Date</label>
+                <input class="form-control" type="date" name="date_from" value="<?= e($dateFrom) ?>">
+            </div>
+            <div>
+                <label class="form-label fw-semibold">To Date</label>
+                <input class="form-control" type="date" name="date_to" value="<?= e($dateTo) ?>">
+            </div>
+            <div>
+                <label class="form-label fw-semibold">Rows</label>
+                <select class="form-select" name="per_page">
+                    <?php foreach ([10,20,50,100] as $size): ?>
                     <option value="<?= $size ?>" <?= $perPage === $size ? 'selected' : '' ?>><?= $size ?> Rows</option>
-                <?php endforeach; ?>
-            </select>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <button class="btn btn-brand" type="submit"><i data-lucide="list-filter"></i> Apply Filters</button>
+            <a class="btn btn-light" href="<?= e(app_url('invoice-list.php')) ?>"><i data-lucide="rotate-ccw"></i>
+                Reset</a>
         </div>
-        <button class="btn btn-brand" type="submit"><i data-lucide="list-filter"></i> Apply Filters</button>
-        <a class="btn btn-light" href="<?= e(app_url('invoice-list.php')) ?>"><i data-lucide="rotate-ccw"></i> Reset</a>
-    </div>
-</form>
+    </form>
 </section>
 
 <div class="invoice-stats">
-    <article class="invoice-stat"><small>Filtered Invoices</small><strong><?= number_format((int)($summary['invoice_count'] ?? 0)) ?></strong></article>
-    <article class="invoice-stat"><small>Invoice Total</small><strong>₹<?= number_format((float)($summary['invoice_total'] ?? 0), 2) ?></strong></article>
-    <article class="invoice-stat"><small>Received</small><strong>₹<?= number_format((float)($summary['received_total'] ?? 0), 2) ?></strong></article>
-    <article class="invoice-stat"><small>Outstanding</small><strong>₹<?= number_format((float)($summary['balance_total'] ?? 0), 2) ?></strong></article>
-    <article class="invoice-stat"><small>Overdue Invoices</small><strong><?= number_format((int)($summary['overdue_count'] ?? 0)) ?></strong></article>
+    <article class="invoice-stat"><small>Filtered
+            Invoices</small><strong><?= number_format((int)($summary['invoice_count'] ?? 0)) ?></strong></article>
+    <article class="invoice-stat"><small>Invoice
+            Total</small><strong>₹<?= number_format((float)($summary['invoice_total'] ?? 0), 2) ?></strong></article>
+    <article class="invoice-stat">
+        <small>Received</small><strong>₹<?= number_format((float)($summary['received_total'] ?? 0), 2) ?></strong>
+    </article>
+    <article class="invoice-stat">
+        <small>Outstanding</small><strong>₹<?= number_format((float)($summary['balance_total'] ?? 0), 2) ?></strong>
+    </article>
+    <article class="invoice-stat"><small>Overdue
+            Invoices</small><strong><?= number_format((int)($summary['overdue_count'] ?? 0)) ?></strong></article>
 </div>
 
 <section class="card-ui p-3">
-<div class="invoice-desktop table-responsive">
-<table class="table align-middle mb-0 invoice-table">
-<thead>
-<tr>
-    <th>Invoice</th><th>Hospital / Client</th><th>Patient / Reference</th><th>Patients / Cases</th><th>Invoice Date</th><th>Due Date</th><th>FY</th><th>Total</th><th>Received</th><th>Balance</th><th>Invoice Status</th><th>Payment Status</th><th>Actions</th>
-</tr>
-</thead>
-<tbody>
-<?php if (!$invoices): ?>
-<tr><td colspan="12" class="text-center text-muted py-5"><i data-lucide="receipt-text"></i><div class="fw-bold mt-2">No invoices found</div><small>Change the filters or create a new invoice.</small></td></tr>
-<?php endif; ?>
+    <div class="invoice-desktop table-responsive">
+        <table class="table align-middle mb-0 invoice-table">
+            <colgroup>
+                <col class="col-invoice">
+                <col class="col-hospital">
+                <col class="col-patient">
+                <col class="col-cases">
+                <col class="col-date">
+                <col class="col-date">
+                <col class="col-fy">
+                <col class="col-money">
+                <col class="col-money">
+                <col class="col-money">
+                <col class="col-status">
+                <col class="col-status">
+                <col class="col-actions">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Invoice</th>
+                    <th>Hospital / Client</th>
+                    <th>Patient / Reference</th>
+                    <th>Patients / Cases</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>FY</th>
+                    <th>Total</th>
+                    <th>Received</th>
+                    <th>Balance</th>
+                    <th>Invoice Status</th>
+                    <th>Payment Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!$invoices): ?>
+                <tr>
+                    <td colspan="13" class="text-center text-muted py-5"><i data-lucide="receipt-text"></i>
+                        <div class="fw-bold mt-2">No invoices found</div><small>Change the filters or create a new
+                            invoice.</small>
+                    </td>
+                </tr>
+                <?php endif; ?>
 
-<?php foreach ($invoices as $invoice): ?>
-<?php
+                <?php foreach ($invoices as $invoice): ?>
+                <?php
 $isOverdue = $invoice['invoice_status'] === 'issued'
     && (float)$invoice['balance_amount'] > 0
     && !empty($invoice['due_date'])
@@ -386,44 +754,63 @@ $clientName = $invoice['parent_hospital_name'] ? $invoice['client_name'] : '';
 $paymentLabel = $isOverdue ? 'Overdue' : $statusLabel($invoice['payment_status']);
 $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status'];
 ?>
-<tr class="<?= $isOverdue ? 'invoice-overdue-row' : '' ?>">
-    <td>
-        <a class="invoice-number" href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><?= e($invoice['invoice_number']) ?></a>
-        <?php if ($invoice['hospital_reference_no']): ?><small class="d-block text-muted">Ref: <?= e($invoice['hospital_reference_no']) ?></small><?php endif; ?>
-    </td>
-    <td>
-        <div class="invoice-client"><?= e($hospitalName) ?></div>
-        <?php if ($clientName !== ''): ?><div class="invoice-meta">Client: <?= e($clientName) ?></div><?php endif; ?>
-        <div class="invoice-meta"><?= e($invoice['client_code']) ?> · <?= e($invoice['client_type_name']) ?></div>
-    </td>
-    <td><strong><?= e($invoice['patient_name'] ?: '—') ?></strong><?php if ($invoice['patient_reference_no']): ?><small class="d-block text-muted"><?= e($invoice['patient_reference_no']) ?></small><?php endif; ?></td>
-    <td><?= e(date('d-m-Y', strtotime($invoice['invoice_date']))) ?></td>
-    <td><?php if ($invoice['due_date']): ?><span class="<?= $isOverdue ? 'text-danger fw-bold' : '' ?>"><?= e(date('d-m-Y', strtotime($invoice['due_date']))) ?></span><?php else: ?>—<?php endif; ?></td>
-    <td><?= e($invoice['financial_year_label']) ?></td>
-    <td class="invoice-money">₹<?= number_format((float)$invoice['grand_total'], 2) ?></td>
-    <td class="invoice-money">₹<?= number_format((float)$invoice['received_amount'], 2) ?></td>
-    <td class="invoice-money">₹<?= number_format((float)$invoice['balance_amount'], 2) ?></td>
-    <td><span class="invoice-pill status-<?= e($invoice['invoice_status']) ?>"><?= e($statusLabel($invoice['invoice_status'])) ?></span></td>
-    <td><span class="invoice-pill <?= e($paymentClass) ?>"><?= e($paymentLabel) ?></span></td>
-    <td>
-        <div class="invoice-actions">
-            <a class="btn btn-sm btn-light" href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="eye"></i> View</a>
-            <?php if ($invoice['invoice_status'] === 'draft'): ?>
-                <a class="btn btn-sm btn-outline-primary" href="<?= e(app_url('invoice-form.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="pencil"></i> Edit</a>
-            <?php endif; ?>
-            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="printer"></i> Print</a>
-        </div>
-    </td>
-</tr>
-<?php endforeach; ?>
-</tbody>
-</table>
-</div>
+                <tr class="<?= $isOverdue ? 'invoice-overdue-row' : '' ?>">
+                    <td>
+                        <a class="invoice-number"
+                            href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><?= e($invoice['invoice_number']) ?></a>
+                        <?php if ($invoice['hospital_reference_no']): ?><small class="d-block text-muted">Ref:
+                            <?= e($invoice['hospital_reference_no']) ?></small><?php endif; ?>
+                    </td>
+                    <td>
+                        <div class="invoice-client"><?= e($hospitalName) ?></div>
+                        <?php if ($clientName !== ''): ?><div class="invoice-meta">Client: <?= e($clientName) ?></div>
+                        <?php endif; ?>
+                        <div class="invoice-meta"><?= e($invoice['client_code']) ?> ·
+                            <?= e($invoice['client_type_name']) ?></div>
+                    </td>
+                    <td><?= e($invoice['patient_name'] ?: '—') ?><?php if ($invoice['patient_reference_no']): ?><small
+                            class="d-block text-muted"><?= e($invoice['patient_reference_no']) ?></small><?php endif; ?>
+                    </td>
+                    <td><?= number_format((float)($invoice['patient_count'] ?? 0), 0) ?></td>
+                    <td><?= e(date('d-m-Y', strtotime($invoice['invoice_date']))) ?></td>
+                    <td><?php if ($invoice['due_date']): ?><span
+                            class="<?= $isOverdue ? 'text-danger fw-bold' : '' ?>"><?= e(date('d-m-Y', strtotime($invoice['due_date']))) ?></span><?php else: ?>—<?php endif; ?>
+                    </td>
+                    <td><?= e($invoice['financial_year_label']) ?></td>
+                    <td class="invoice-money">₹<?= number_format((float)$invoice['grand_total'], 2) ?></td>
+                    <td class="invoice-money">₹<?= number_format((float)$invoice['received_amount'], 2) ?></td>
+                    <td class="invoice-money">₹<?= number_format((float)$invoice['balance_amount'], 2) ?></td>
+                    <td><span
+                            class="invoice-pill status-<?= e($invoice['invoice_status']) ?>"><?= e($statusLabel($invoice['invoice_status'])) ?></span>
+                    </td>
+                    <td><span class="invoice-pill <?= e($paymentClass) ?>"><?= e($paymentLabel) ?></span></td>
+                    <td>
+                        <div class="invoice-actions">
+                            <a class="btn btn-sm btn-light action-icon-btn" title="View"
+                                href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><i
+                                    data-lucide="eye"></i></a>
+                            <?php if ($invoice['invoice_status'] === 'draft'): ?>
+                            <a class="btn btn-sm btn-outline-primary action-icon-btn" title="Edit"
+                                href="<?= e(app_url('invoice-form.php?id=' . (int)$invoice['id'])) ?>"><i
+                                    data-lucide="pencil"></i></a>
+                            <?php endif; ?>
+                            <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print" target="_blank"
+                                href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'])) ?>"><i
+                                    data-lucide="printer"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
-<div class="invoice-mobile-list">
-<?php if (!$invoices): ?><div class="text-center text-muted py-5"><i data-lucide="receipt-text"></i><div class="fw-bold mt-2">No invoices found</div></div><?php endif; ?>
-<?php foreach ($invoices as $invoice): ?>
-<?php
+    <div class="invoice-mobile-list">
+        <?php if (!$invoices): ?><div class="text-center text-muted py-5"><i data-lucide="receipt-text"></i>
+            <div class="fw-bold mt-2">No invoices found</div>
+        </div><?php endif; ?>
+        <?php foreach ($invoices as $invoice): ?>
+        <?php
 $isOverdue = $invoice['invoice_status'] === 'issued'
     && (float)$invoice['balance_amount'] > 0
     && !empty($invoice['due_date'])
@@ -433,41 +820,63 @@ $clientName = $invoice['parent_hospital_name'] ? $invoice['client_name'] : '';
 $paymentLabel = $isOverdue ? 'Overdue' : $statusLabel($invoice['payment_status']);
 $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status'];
 ?>
-<article class="invoice-mobile-card">
-    <div class="d-flex justify-content-between gap-2">
-        <div><a class="invoice-number" href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><?= e($invoice['invoice_number']) ?></a><small class="d-block text-muted"><?= e(date('d-m-Y', strtotime($invoice['invoice_date']))) ?></small></div>
-        <span class="invoice-pill status-<?= e($invoice['invoice_status']) ?>"><?= e($statusLabel($invoice['invoice_status'])) ?></span>
+        <article class="invoice-mobile-card">
+            <div class="d-flex justify-content-between gap-2">
+                <div><a class="invoice-number"
+                        href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><?= e($invoice['invoice_number']) ?></a><small
+                        class="d-block text-muted"><?= e(date('d-m-Y', strtotime($invoice['invoice_date']))) ?></small>
+                </div>
+                <span
+                    class="invoice-pill status-<?= e($invoice['invoice_status']) ?>"><?= e($statusLabel($invoice['invoice_status'])) ?></span>
+            </div>
+            <div class="mt-3"><?= e($hospitalName) ?><?php if ($clientName !== ''): ?><small
+                    class="d-block text-muted">Client: <?= e($clientName) ?></small><?php endif; ?></div>
+            <div class="invoice-mobile-grid">
+                <div><small>Total</small><strong>₹<?= number_format((float)$invoice['grand_total'], 2) ?></strong></div>
+                <div><small>Balance</small><strong>₹<?= number_format((float)$invoice['balance_amount'], 2) ?></strong>
+                </div>
+                <div><small>Patients /
+                        Cases</small><strong><?= number_format((float)($invoice['patient_count'] ?? 0), 0) ?></strong>
+                </div>
+                <div><small>Payment</small><span
+                        class="invoice-pill <?= e($paymentClass) ?>"><?= e($paymentLabel) ?></span></div>
+            </div>
+            <div class="invoice-actions mt-3">
+                <a class="btn btn-sm btn-light action-icon-btn" title="View"
+                    href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="eye"></i></a>
+                <?php if ($invoice['invoice_status'] === 'draft'): ?><a
+                    class="btn btn-sm btn-outline-primary action-icon-btn" title="Edit"
+                    href="<?= e(app_url('invoice-form.php?id=' . (int)$invoice['id'])) ?>"><i
+                        data-lucide="pencil"></i></a><?php endif; ?>
+                <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print" target="_blank"
+                    href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'])) ?>"><i
+                        data-lucide="printer"></i></a>
+            </div>
+        </article>
+        <?php endforeach; ?>
     </div>
-    <div class="mt-3"><strong><?= e($hospitalName) ?></strong><?php if ($clientName !== ''): ?><small class="d-block text-muted">Client: <?= e($clientName) ?></small><?php endif; ?></div>
-    <div class="invoice-mobile-grid">
-        <div><small>Total</small><strong>₹<?= number_format((float)$invoice['grand_total'], 2) ?></strong></div>
-        <div><small>Balance</small><strong>₹<?= number_format((float)$invoice['balance_amount'], 2) ?></strong></div>
-        <div><small>Patients / Cases</small><strong><?= number_format((float)($invoice['patient_count'] ?? 0), 0) ?></strong></div>
-        <div><small>Payment</small><span class="invoice-pill <?= e($paymentClass) ?>"><?= e($paymentLabel) ?></span></div>
-    </div>
-    <div class="invoice-actions mt-3">
-        <a class="btn btn-sm btn-light" href="<?= e(app_url('invoice-view.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="eye"></i> View</a>
-        <?php if ($invoice['invoice_status'] === 'draft'): ?><a class="btn btn-sm btn-outline-primary" href="<?= e(app_url('invoice-form.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="pencil"></i> Edit</a><?php endif; ?>
-        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'])) ?>"><i data-lucide="printer"></i> Print</a>
-    </div>
-</article>
-<?php endforeach; ?>
-</div>
 
-<?php if ($totalRows > 0): ?>
-<div class="invoice-pagination">
-    <small class="text-muted">Showing <?= number_format($offset + 1) ?> to <?= number_format(min($offset + $perPage, $totalRows)) ?> of <?= number_format($totalRows) ?> invoices</small>
-    <?php if ($totalPages > 1): ?>
-    <nav><ul class="pagination pagination-sm mb-0">
-        <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>"><a class="page-link" href="<?= e($paginationUrl(max(1, $page - 1), $queryWithoutPage)) ?>">Previous</a></li>
-        <?php for ($n = max(1, $page - 2); $n <= min($totalPages, $page + 2); $n++): ?>
-            <li class="page-item <?= $n === $page ? 'active' : '' ?>"><a class="page-link" href="<?= e($paginationUrl($n, $queryWithoutPage)) ?>"><?= $n ?></a></li>
-        <?php endfor; ?>
-        <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>"><a class="page-link" href="<?= e($paginationUrl(min($totalPages, $page + 1), $queryWithoutPage)) ?>">Next</a></li>
-    </ul></nav>
+    <?php if ($totalRows > 0): ?>
+    <div class="invoice-pagination">
+        <small class="text-muted">Showing <?= number_format($offset + 1) ?> to
+            <?= number_format(min($offset + $perPage, $totalRows)) ?> of <?= number_format($totalRows) ?>
+            invoices</small>
+        <?php if ($totalPages > 1): ?>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>"><a class="page-link"
+                        href="<?= e($paginationUrl(max(1, $page - 1), $queryWithoutPage)) ?>">Previous</a></li>
+                <?php for ($n = max(1, $page - 2); $n <= min($totalPages, $page + 2); $n++): ?>
+                <li class="page-item <?= $n === $page ? 'active' : '' ?>"><a class="page-link"
+                        href="<?= e($paginationUrl($n, $queryWithoutPage)) ?>"><?= $n ?></a></li>
+                <?php endfor; ?>
+                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>"><a class="page-link"
+                        href="<?= e($paginationUrl(min($totalPages, $page + 1), $queryWithoutPage)) ?>">Next</a></li>
+            </ul>
+        </nav>
+        <?php endif; ?>
+    </div>
     <?php endif; ?>
-</div>
-<?php endif; ?>
 </section>
 
 <script>
@@ -484,8 +893,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            option.hidden = hospitalId !== '0'
-                && option.dataset.hospitalId !== hospitalId;
+            option.hidden = hospitalId !== '0' &&
+                option.dataset.hospitalId !== hospitalId;
         });
 
         const selected = client.options[client.selectedIndex];

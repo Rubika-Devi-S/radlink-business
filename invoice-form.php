@@ -137,10 +137,7 @@ if ($selectedFinancialYearId <= 0) {
 include __DIR__ . '/includes/layout-start.php';
 ?>
 
-<link
-    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-    rel="stylesheet"
->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
@@ -245,7 +242,7 @@ include __DIR__ . '/includes/layout-start.php';
     background: var(--card-bg);
 }
 
-.invoice-item + .invoice-item {
+.invoice-item+.invoice-item {
     margin-top: 12px;
 }
 
@@ -378,18 +375,14 @@ include __DIR__ . '/includes/layout-start.php';
     background: var(--card-bg);
 }
 
-.select2-container--default
-.select2-selection--single
-.select2-selection__rendered {
+.select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 44px;
     padding-left: 13px;
     padding-right: 36px;
     color: var(--text-main);
 }
 
-.select2-container--default
-.select2-selection--single
-.select2-selection__arrow {
+.select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 44px;
     right: 7px;
 }
@@ -507,55 +500,29 @@ include __DIR__ . '/includes/layout-start.php';
             </h1>
 
             <p class="mb-0 text-muted">
-                Select the hospital and add the required services. Service rates and totals are calculated automatically.
+                Select the hospital and add the required services. Service rates and totals are calculated
+                automatically.
             </p>
         </div>
 
-        <a
-            class="btn btn-light"
-            href="<?= e(app_url('invoices.php')) ?>"
-        >
+        <a class="btn btn-light" href="<?= e(app_url('invoice-list.php')) ?>">
             <i data-lucide="arrow-left"></i>
             Back to Invoice List
         </a>
     </div>
 
     <form id="invoiceForm" novalidate>
-        <input
-            type="hidden"
-            name="backend_action"
-            value="save_invoice"
-        >
-        <input
-            type="hidden"
-            name="csrf_token"
-            value="<?= e(csrf_token()) ?>"
-        >
+        <input type="hidden" name="backend_action" value="save_invoice">
+        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
 
-        <input
-            type="hidden"
-            name="invoice_id"
-            value="<?= $invoiceId ?>"
-        >
+        <input type="hidden" name="invoice_id" value="<?= $invoiceId ?>">
 
-        <input
-            type="hidden"
-            name="billing_responsibility"
-            value="client_credit"
-        >
+        <input type="hidden" name="billing_responsibility" value="client_credit">
 
-        <input
-            type="hidden"
-            name="invoice_status"
-            id="invoiceStatus"
-            value="<?= e($invoice['invoice_status'] ?? 'issued') ?>"
-        >
+        <input type="hidden" name="invoice_status" id="invoiceStatus"
+            value="<?= e($invoice['invoice_status'] ?? 'issued') ?>">
 
-        <input
-            type="hidden"
-            name="items_json"
-            id="itemsJson"
-        >
+        <input type="hidden" name="items_json" id="itemsJson">
 
         <section class="invoice-card mb-3">
             <div class="invoice-card-header">
@@ -566,12 +533,8 @@ include __DIR__ . '/includes/layout-start.php';
                     </small>
                 </div>
 
-                <a
-                    href="#"
-                    class="btn btn-sm btn-outline-primary disabled"
-                    id="previousInvoicesLink"
-                    aria-disabled="true"
-                >
+                <a href="#" class="btn btn-sm btn-outline-primary disabled" id="previousInvoicesLink"
+                    aria-disabled="true">
                     <i data-lucide="history"></i>
                     Previous Invoices
                 </a>
@@ -580,24 +543,16 @@ include __DIR__ . '/includes/layout-start.php';
             <div class="invoice-card-body">
                 <div class="row g-3">
                     <div class="col-lg-5">
-                        <label
-                            class="form-label fw-semibold"
-                            for="hospitalId"
-                        >
+                        <label class="form-label fw-semibold" for="hospitalId">
                             Hospital
                             <span class="text-danger">*</span>
                         </label>
 
-                        <select
-                            class="form-select"
-                            name="client_id"
-                            id="hospitalId"
-                            required
-                        >
+                        <select class="form-select" name="client_id" id="hospitalId" required>
                             <option value="">Search hospital...</option>
 
                             <?php foreach ($hospitals as $hospital): ?>
-                                <?php
+                            <?php
                                 $address = implode(', ', array_filter([
                                     $hospital['address_line_1'] ?? '',
                                     $hospital['address_line_2'] ?? '',
@@ -621,123 +576,78 @@ include __DIR__ . '/includes/layout-start.php';
                                 );
                                 ?>
 
-                                <option
-                                    value="<?= (int)$hospital['id'] ?>"
-                                    data-code="<?= e($hospital['client_code'] ?? '') ?>"
-                                    data-name="<?= e($hospital['client_name'] ?? '') ?>"
-                                    data-mobile="<?= e($hospital['mobile'] ?? '') ?>"
-                                    data-email="<?= e($hospital['email'] ?? '') ?>"
-                                    data-address="<?= e($address) ?>"
-                                    data-credit-days="<?= $creditDays ?>"
-                                    data-billing-mode="<?= e($billingMode) ?>"
-                                    <?= $selectedHospitalId === (int)$hospital['id']
+                            <option value="<?= (int)$hospital['id'] ?>"
+                                data-code="<?= e($hospital['client_code'] ?? '') ?>"
+                                data-name="<?= e($hospital['client_name'] ?? '') ?>"
+                                data-mobile="<?= e($hospital['mobile'] ?? '') ?>"
+                                data-email="<?= e($hospital['email'] ?? '') ?>" data-address="<?= e($address) ?>"
+                                data-credit-days="<?= $creditDays ?>" data-billing-mode="<?= e($billingMode) ?>" <?= $selectedHospitalId === (int)$hospital['id']
                                         ? 'selected'
-                                        : '' ?>
-                                >
-                                    <?= e(
+                                        : '' ?>>
+                                <?= e(
                                         ($hospital['client_code'] ?? '') .
                                         ' - ' .
                                         ($hospital['client_name'] ?? '')
                                     ) ?>
-                                </option>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="col-md-4 col-lg-2">
-                        <label
-                            class="form-label fw-semibold"
-                            for="invoiceDate"
-                        >
+                        <label class="form-label fw-semibold" for="invoiceDate">
                             Invoice Date
                             <span class="text-danger">*</span>
                         </label>
 
-                        <input
-                            class="form-control"
-                            type="date"
-                            name="invoice_date"
-                            id="invoiceDate"
-                            value="<?= e($invoiceDate) ?>"
-                            required
-                        >
+                        <input class="form-control" type="date" name="invoice_date" id="invoiceDate"
+                            value="<?= e($invoiceDate) ?>" required>
                     </div>
 
                     <div class="col-md-4 col-lg-2">
-                        <label
-                            class="form-label fw-semibold"
-                            for="dueDate"
-                        >
+                        <label class="form-label fw-semibold" for="dueDate">
                             Due Date
                         </label>
 
-                        <input
-                            class="form-control"
-                            type="date"
-                            name="due_date"
-                            id="dueDate"
-                            value="<?= e($dueDate) ?>"
-                        >
+                        <input class="form-control" type="date" name="due_date" id="dueDate" value="<?= e($dueDate) ?>">
                     </div>
 
                     <div class="col-md-4 col-lg-2">
-                        <label
-                            class="form-label fw-semibold"
-                            for="financialYearId"
-                        >
+                        <label class="form-label fw-semibold" for="financialYearId">
                             Financial Year
                         </label>
 
-                        <select
-                            class="form-select"
-                            name="financial_year_id"
-                            id="financialYearId"
-                        >
+                        <select class="form-select" name="financial_year_id" id="financialYearId">
                             <option value="0">Auto by invoice date</option>
 
                             <?php foreach ($financialYears as $financialYear): ?>
-                                <option
-                                    value="<?= (int)$financialYear['id'] ?>"
-                                    <?= $selectedFinancialYearId === (int)$financialYear['id']
+                            <option value="<?= (int)$financialYear['id'] ?>" <?= $selectedFinancialYearId === (int)$financialYear['id']
                                         ? 'selected'
-                                        : '' ?>
-                                >
-                                    <?= e($financialYear['year_label']) ?>
-                                    <?= $financialYear['is_current'] ? ' (Current)' : '' ?>
-                                </option>
+                                        : '' ?>>
+                                <?= e($financialYear['year_label']) ?>
+                                <?= $financialYear['is_current'] ? ' (Current)' : '' ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
 
                         <?php if (!$financialYears): ?>
-                            <div class="form-text text-warning">
-                                No financial year exists. It will be created automatically when the invoice is saved.
-                            </div>
+                        <div class="form-text text-warning">
+                            No financial year exists. It will be created automatically when the invoice is saved.
+                        </div>
                         <?php endif; ?>
                     </div>
 
                     <div class="col-md-4 col-lg-3">
-                        <label
-                            class="form-label fw-semibold"
-                            for="hospitalReference"
-                        >
+                        <label class="form-label fw-semibold" for="hospitalReference">
                             Hospital Reference
                         </label>
 
-                        <input
-                            class="form-control"
-                            type="text"
-                            name="hospital_reference_no"
-                            id="hospitalReference"
-                            value="<?= e($invoice['hospital_reference_no'] ?? '') ?>"
-                            placeholder="Optional"
-                        >
+                        <input class="form-control" type="text" name="hospital_reference_no" id="hospitalReference"
+                            value="<?= e($invoice['hospital_reference_no'] ?? '') ?>" placeholder="Optional">
                     </div>
                 </div>
 
-                <div
-                    class="hospital-summary"
-                    id="hospitalSummary"
-                >
+                <div class="hospital-summary" id="hospitalSummary">
                     <div class="hospital-summary-title">
                         <div>
                             <strong id="summaryHospitalName">—</strong>
@@ -785,17 +695,9 @@ include __DIR__ . '/includes/layout-start.php';
                             Total Patients / Studies Covered
                         </label>
 
-                        <input
-                            class="form-control"
-                            type="number"
-                            name="total_patient_count"
-                            id="totalPatientCount"
-                            value="<?= (int)($invoice['total_patient_count'] ?? 0) ?>"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Example: 48"
-                        >
+                        <input class="form-control" type="number" name="total_patient_count" id="totalPatientCount"
+                            value="<?= (int)($invoice['total_patient_count'] ?? 0) ?>" min="0" step="1"
+                            inputmode="numeric" placeholder="Example: 48">
 
                         <div class="form-text">
                             Reference only. This count does not affect invoice calculation.
@@ -807,12 +709,8 @@ include __DIR__ . '/includes/layout-start.php';
                             Patient Name
                         </label>
 
-                        <input
-                            class="form-control"
-                            name="patient_name"
-                            value="<?= e($invoice['patient_name'] ?? '') ?>"
-                            placeholder="Optional for consolidated billing"
-                        >
+                        <input class="form-control" name="patient_name" value="<?= e($invoice['patient_name'] ?? '') ?>"
+                            placeholder="Optional for consolidated billing">
                     </div>
 
                     <div class="col-md-4">
@@ -820,12 +718,8 @@ include __DIR__ . '/includes/layout-start.php';
                             Patient Reference No.
                         </label>
 
-                        <input
-                            class="form-control"
-                            name="patient_reference_no"
-                            value="<?= e($invoice['patient_reference_no'] ?? '') ?>"
-                            placeholder="Optional"
-                        >
+                        <input class="form-control" name="patient_reference_no"
+                            value="<?= e($invoice['patient_reference_no'] ?? '') ?>" placeholder="Optional">
                     </div>
 
                     <div class="col-md-4">
@@ -833,11 +727,7 @@ include __DIR__ . '/includes/layout-start.php';
                             Billing Responsibility
                         </label>
 
-                        <input
-                            class="form-control"
-                            value="Hospital Credit"
-                            readonly
-                        >
+                        <input class="form-control" value="Hospital Credit" readonly>
                     </div>
                 </div>
             </div>
@@ -852,11 +742,7 @@ include __DIR__ . '/includes/layout-start.php';
                     </small>
                 </div>
 
-                <button
-                    class="btn btn-sm btn-brand"
-                    type="button"
-                    id="addServiceButton"
-                >
+                <button class="btn btn-sm btn-brand" type="button" id="addServiceButton">
                     <i data-lucide="plus"></i>
                     Add Service
                 </button>
@@ -865,11 +751,7 @@ include __DIR__ . '/includes/layout-start.php';
             <div class="invoice-card-body">
                 <div id="invoiceItems"></div>
 
-                <div
-                    class="invoice-empty"
-                    id="emptyItems"
-                    hidden
-                >
+                <div class="invoice-empty" id="emptyItems" hidden>
                     <i data-lucide="receipt-text"></i>
                     <div class="fw-bold mt-2">
                         No services added
@@ -889,12 +771,8 @@ include __DIR__ . '/includes/layout-start.php';
                             Notes
                         </label>
 
-                        <textarea
-                            class="form-control"
-                            name="notes"
-                            rows="5"
-                            placeholder="Enter notes or instructions..."
-                        ><?= e($invoice['notes'] ?? '') ?></textarea>
+                        <textarea class="form-control" name="notes" rows="5"
+                            placeholder="Enter notes or instructions..."><?= e($invoice['notes'] ?? '') ?></textarea>
                     </div>
 
                     <div class="col-lg-6">
@@ -930,21 +808,12 @@ include __DIR__ . '/includes/layout-start.php';
         </section>
 
         <div class="invoice-actions">
-            <button
-                class="btn btn-outline-secondary"
-                type="button"
-                data-save-mode="draft"
-            >
+            <button class="btn btn-outline-secondary" type="button" data-save-mode="draft">
                 <i data-lucide="file-clock"></i>
                 Save Draft
             </button>
 
-            <button
-                class="btn btn-brand"
-                type="button"
-                data-save-mode="issued"
-                id="saveIssueButton"
-            >
+            <button class="btn btn-brand" type="button" data-save-mode="issued" id="saveIssueButton">
                 <i data-lucide="badge-check"></i>
                 Save & Issue
             </button>
@@ -962,12 +831,9 @@ include __DIR__ . '/includes/layout-start.php';
                     <option value="">Select service...</option>
 
                     <?php foreach ($services as $service): ?>
-                        <option
-                            value="<?= (int)$service['id'] ?>"
-                            data-standard-rate="<?= e($service['standard_rate']) ?>"
-                            data-tax="<?= e($service['tax_percent']) ?>"
-                        >
-                            <?= e(
+                    <option value="<?= (int)$service['id'] ?>" data-standard-rate="<?= e($service['standard_rate']) ?>"
+                        data-tax="<?= e($service['tax_percent']) ?>">
+                        <?= e(
                                 $service['service_code'] .
                                 ' - ' .
                                 $service['service_name'] .
@@ -975,7 +841,7 @@ include __DIR__ . '/includes/layout-start.php';
                                 $service['category_name'] .
                                 ')'
                             ) ?>
-                        </option>
+                    </option>
                     <?php endforeach; ?>
                 </select>
 
@@ -986,13 +852,7 @@ include __DIR__ . '/includes/layout-start.php';
 
             <div class="amount-field">
                 <label class="form-label fw-semibold">Amount</label>
-                <input
-                    type="number"
-                    class="form-control item-amount"
-                    value="0.00"
-                    step="0.01"
-                    readonly
-                >
+                <input type="number" class="form-control item-amount" value="0.00" step="0.01" readonly>
             </div>
 
             <div>
@@ -1006,33 +866,16 @@ include __DIR__ . '/includes/layout-start.php';
 
             <div>
                 <label class="form-label fw-semibold">Value</label>
-                <input
-                    type="number"
-                    class="form-control item-discount-value"
-                    value="0"
-                    min="0"
-                    step="0.01"
-                    disabled
-                >
+                <input type="number" class="form-control item-discount-value" value="0" min="0" step="0.01" disabled>
             </div>
 
             <div class="discounted-field">
                 <label class="form-label fw-semibold">Discounted Amount</label>
-                <input
-                    type="number"
-                    class="form-control item-discounted-amount"
-                    value="0.00"
-                    step="0.01"
-                    readonly
-                >
+                <input type="number" class="form-control item-discounted-amount" value="0.00" step="0.01" readonly>
             </div>
 
             <div class="remove-field">
-                <button
-                    type="button"
-                    class="btn btn-outline-danger remove-item"
-                    aria-label="Remove service"
-                >
+                <button type="button" class="btn btn-outline-danger remove-item" aria-label="Remove service">
                     <i data-lucide="trash-2"></i>
                 </button>
             </div>
@@ -1062,13 +905,16 @@ include __DIR__ . '/includes/layout-start.php';
 
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold">Hospital Name <span class="text-danger">*</span></label>
-                            <input class="form-control" name="client_name" id="quickHospitalName" maxlength="200" required>
+                            <label class="form-label fw-semibold">Hospital Name <span
+                                    class="text-danger">*</span></label>
+                            <input class="form-control" name="client_name" id="quickHospitalName" maxlength="200"
+                                required>
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Hospital Code</label>
-                            <input class="form-control text-uppercase" name="client_code" id="quickHospitalCode" maxlength="40" placeholder="Auto-generated">
+                            <input class="form-control text-uppercase" name="client_code" id="quickHospitalCode"
+                                maxlength="40" placeholder="Auto-generated">
                         </div>
 
                         <div class="col-md-6">
@@ -1128,7 +974,8 @@ include __DIR__ . '/includes/layout-start.php';
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Credit Period (Days)</label>
-                            <input class="form-control" type="number" name="credit_period_days" id="quickHospitalCredit" min="0" max="3650" value="0">
+                            <input class="form-control" type="number" name="credit_period_days" id="quickHospitalCredit"
+                                min="0" max="3650" value="0">
                         </div>
 
                         <div class="col-md-4">
@@ -1157,7 +1004,8 @@ include __DIR__ . '/includes/layout-start.php';
 
                 <div class="modal-footer position-sticky bottom-0 bg-body border-top" style="z-index:5">
                     <button class="btn btn-light" type="button" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-brand px-4" type="submit" id="quickHospitalSaveButton" style="min-width:160px">
+                    <button class="btn btn-brand px-4" type="submit" id="quickHospitalSaveButton"
+                        style="min-width:160px">
                         <i data-lucide="save"></i>
                         <span>Save Hospital</span>
                     </button>
@@ -1230,8 +1078,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .find('.hospital-option-meta')
             .text(
                 [code, mobile, address]
-                    .filter(Boolean)
-                    .join(' · ')
+                .filter(Boolean)
+                .join(' · ')
             )
             .end();
     }
@@ -1304,8 +1152,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const selected = event.params.data;
 
         if (
-            !selected.newHospital
-            && !String(selected.id || '').startsWith('__new__:')
+            !selected.newHospital &&
+            !String(selected.id || '').startsWith('__new__:')
         ) {
             updateHospitalSummary(true);
             return;
@@ -1374,9 +1222,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const creditDays = Number(option.dataset.creditDays || 0);
 
         document.getElementById('summaryCredit').textContent =
-            creditDays > 0
-                ? `${creditDays} Days`
-                : 'No credit period';
+            creditDays > 0 ?
+            `${creditDays} Days` :
+            'No credit period';
 
         document.getElementById('summaryBillingMode').textContent =
             option.dataset.billingMode || 'Hospital Credit';
@@ -1532,7 +1380,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const response = await fetch(url, {
                 credentials: 'same-origin',
-                headers: {'Accept': 'application/json'}
+                headers: {
+                    'Accept': 'application/json'
+                }
             });
 
             const result = await response.json();
@@ -1557,9 +1407,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const isAgreedRate =
                 Math.abs(appliedRate - standardRate) > 0.0001;
 
-            caption.innerHTML = isAgreedRate
-                ? `Hospital agreed rate: <span class="hospital-rate">₹${appliedRate.toFixed(2)}</span>`
-                : `Standard service rate: ₹${appliedRate.toFixed(2)}`;
+            caption.innerHTML = isAgreedRate ?
+                `Hospital agreed rate: <span class="hospital-rate">₹${appliedRate.toFixed(2)}</span>` :
+                `Standard service rate: ₹${appliedRate.toFixed(2)}`;
         } catch (error) {
             if (serviceSelect.value !== requestedServiceId) {
                 return;
@@ -1591,8 +1441,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function collectItems() {
         return Array.from(
-            itemsContainer.querySelectorAll('.invoice-item')
-        )
+                itemsContainer.querySelectorAll('.invoice-item')
+            )
             .map(row => ({
                 service_id: Number(
                     row.querySelector('.item-service').value
@@ -1607,8 +1457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 applied_rate: Number(
                     row.querySelector('.item-amount').value || 0
                 ),
-                discount_type:
-                    row.querySelector('.item-discount-type').value,
+                discount_type: row.querySelector('.item-discount-type').value,
                 discount_value: Number(
                     row.querySelector('.item-discount-value').value || 0
                 ),
@@ -1648,11 +1497,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const discountAmount =
-                    discountType === 'percentage'
-                        ? amount * discountValue / 100
-                        : discountType === 'amount'
-                            ? Math.min(amount, Math.max(0, discountValue))
-                            : 0;
+                    discountType === 'percentage' ?
+                    amount * discountValue / 100 :
+                    discountType === 'amount' ?
+                    Math.min(amount, Math.max(0, discountValue)) :
+                    0;
 
                 const discountedAmount = Math.max(0, amount - discountAmount);
                 const taxAmount = discountedAmount * taxPercent / 100;
@@ -1743,8 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.set('items_json', JSON.stringify(items));
 
             const response = await fetch(
-                '<?= e(app_url('api/invoice.php')) ?>',
-                {
+                '<?= e(app_url('api/invoice.php')) ?>', {
                     method: 'POST',
                     body: formData,
                     credentials: 'same-origin',
@@ -1771,9 +1619,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 throw new Error(
                     raw.replace(/<[^>]*>/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                    || 'Invalid server response.'
+                    .replace(/\s+/g, ' ')
+                    .trim() ||
+                    'Invalid server response.'
                 );
             }
 
@@ -1847,8 +1695,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(
-                '<?= e(app_url('api/hospital.php')) ?>',
-                {
+                '<?= e(app_url('api/hospital.php')) ?>', {
                     method: 'POST',
                     body: (() => {
                         const formData = new FormData(quickHospitalForm);
@@ -1871,9 +1718,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 throw new Error(
                     raw.replace(/<[^>]*>/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                    || 'Invalid server response.'
+                    .replace(/\s+/g, ' ')
+                    .trim() ||
+                    'Invalid server response.'
                 );
             }
 

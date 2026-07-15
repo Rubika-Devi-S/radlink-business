@@ -573,26 +573,16 @@ include __DIR__ . '/includes/layout-start.php';
     --out-radius: 18px;
 }
 
+/* Reference-style filters */
 .outstanding-filter-grid {
     display: grid;
-    grid-template-columns:
-        minmax(230px, 2fr)
-        minmax(180px, 1fr)
-        minmax(180px, 1fr)
-        minmax(150px, .8fr)
-        minmax(145px, .8fr);
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: 12px;
 }
 
 .outstanding-filter-bottom {
     display: grid;
-    grid-template-columns:
-        minmax(150px, 1fr)
-        minmax(150px, 1fr)
-        minmax(150px, .8fr)
-        minmax(150px, .8fr)
-        minmax(110px, .6fr)
-        auto auto;
+    grid-template-columns: 1fr 1fr .75fr .9fr .7fr auto auto;
     gap: 12px;
     margin-top: 12px;
     align-items: end;
@@ -606,6 +596,7 @@ include __DIR__ . '/includes/layout-start.php';
 }
 
 .outstanding-stat {
+    min-width: 0;
     padding: 16px;
     border: 1px solid var(--border-soft);
     border-radius: 16px;
@@ -631,6 +622,7 @@ include __DIR__ . '/includes/layout-start.php';
     color: var(--danger, #dc2626);
 }
 
+/* Ageing cards */
 .ageing-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -639,16 +631,14 @@ include __DIR__ . '/includes/layout-start.php';
 
 .ageing-card {
     display: block;
+    min-width: 0;
     padding: 13px;
     border: 1px solid var(--border-soft);
     border-radius: 14px;
     color: var(--text-main);
     background: var(--card-bg);
     text-decoration: none;
-    transition:
-        transform .16s ease,
-        border-color .16s ease,
-        box-shadow .16s ease;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
 }
 
 .ageing-card:hover {
@@ -675,16 +665,75 @@ include __DIR__ . '/includes/layout-start.php';
     font-weight: 900;
 }
 
-.outstanding-table-card {
-    overflow: hidden;
+/* Stable desktop table alignment */
+.outstanding-desktop-table {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .outstanding-table {
-    min-width: 1240px;
+    width: 100%;
+    min-width: 1100px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-.outstanding-table thead th {
+.outstanding-table th,
+.outstanding-table td {
+    vertical-align: middle;
     white-space: nowrap;
+}
+
+.outstanding-table th {
+    padding: 11px 10px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.outstanding-table td {
+    padding: 12px 10px;
+}
+
+.outstanding-table th:nth-child(2),
+.outstanding-table td:nth-child(2),
+.outstanding-table th:nth-child(3),
+.outstanding-table td:nth-child(3) {
+    white-space: normal;
+}
+
+.outstanding-table .col-invoice {
+    width: 12%;
+}
+
+.outstanding-table .col-party {
+    width: 19%;
+}
+
+.outstanding-table .col-patient {
+    width: 14%;
+}
+
+.outstanding-table .col-date {
+    width: 9%;
+}
+
+.outstanding-table .col-ageing {
+    width: 12%;
+}
+
+.outstanding-table .col-money {
+    width: 9%;
+}
+
+.outstanding-table .col-status {
+    width: 9%;
+}
+
+.outstanding-table .col-actions {
+    width: 10%;
 }
 
 .outstanding-number {
@@ -694,6 +743,7 @@ include __DIR__ . '/includes/layout-start.php';
 
 .outstanding-party {
     font-weight: 850;
+    line-height: 1.35;
 }
 
 .outstanding-meta {
@@ -702,15 +752,15 @@ include __DIR__ . '/includes/layout-start.php';
     font-size: 11px;
 }
 
-.outstanding-amount {
-    font-weight: 850;
+.outstanding-amount,
+.outstanding-balance {
     white-space: nowrap;
+    font-weight: 850;
 }
 
 .outstanding-balance {
     color: var(--danger, #dc2626);
     font-weight: 950;
-    white-space: nowrap;
 }
 
 .outstanding-pill {
@@ -761,18 +811,28 @@ include __DIR__ . '/includes/layout-start.php';
 }
 
 .outstanding-overdue-row {
-    background:
-        color-mix(
-            in srgb,
-            #fff7ed 55%,
-            transparent
-        );
+    background: color-mix(in srgb, #fff7ed 55%, transparent);
 }
 
 .outstanding-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.action-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    border-radius: 10px;
+}
+
+.action-icon-btn svg {
+    width: 16px;
+    height: 16px;
 }
 
 .outstanding-mobile-list {
@@ -786,7 +846,7 @@ include __DIR__ . '/includes/layout-start.php';
     background: var(--card-bg);
 }
 
-.outstanding-mobile-card + .outstanding-mobile-card {
+.outstanding-mobile-card+.outstanding-mobile-card {
     margin-top: 12px;
 }
 
@@ -837,6 +897,7 @@ include __DIR__ . '/includes/layout-start.php';
 }
 
 @media (max-width: 767.98px) {
+
     .outstanding-filter-grid,
     .outstanding-filter-bottom,
     .outstanding-stats,
@@ -881,18 +942,12 @@ include __DIR__ . '/includes/layout-start.php';
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            <a
-                class="btn btn-light"
-                href="<?= e(app_url('payments.php')) ?>"
-            >
+            <a class="btn btn-light" href="<?= e(app_url('payments.php')) ?>">
                 <i data-lucide="list-checks"></i>
                 Payment List
             </a>
 
-            <a
-                class="btn btn-brand"
-                href="<?= e(app_url('payment-form.php')) ?>"
-            >
+            <a class="btn btn-brand" href="<?= e(app_url('payment-form.php')) ?>">
                 <i data-lucide="circle-dollar-sign"></i>
                 Record Payment
             </a>
@@ -912,13 +967,8 @@ include __DIR__ . '/includes/layout-start.php';
                             <i data-lucide="search"></i>
                         </span>
 
-                        <input
-                            class="form-control"
-                            type="search"
-                            name="q"
-                            value="<?= e($search) ?>"
-                            placeholder="Invoice, hospital, client, patient or reference..."
-                        >
+                        <input class="form-control" type="search" name="q" value="<?= e($search) ?>"
+                            placeholder="Invoice, hospital, client, patient or reference...">
                     </div>
                 </div>
 
@@ -927,26 +977,19 @@ include __DIR__ . '/includes/layout-start.php';
                         Hospital
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="hospital_id"
-                        id="hospitalFilter"
-                    >
+                    <select class="form-select" name="hospital_id" id="hospitalFilter">
                         <option value="0">All Hospitals</option>
 
                         <?php foreach ($hospitals as $hospital): ?>
-                            <option
-                                value="<?= (int)$hospital['id'] ?>"
-                                <?= $hospitalId === (int)$hospital['id']
+                        <option value="<?= (int)$hospital['id'] ?>" <?= $hospitalId === (int)$hospital['id']
                                     ? 'selected'
-                                    : '' ?>
-                            >
-                                <?= e(
+                                    : '' ?>>
+                            <?= e(
                                     $hospital['client_code'] .
                                     ' - ' .
                                     $hospital['client_name']
                                 ) ?>
-                            </option>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -956,22 +999,15 @@ include __DIR__ . '/includes/layout-start.php';
                         Client
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="client_id"
-                        id="clientFilter"
-                    >
+                    <select class="form-select" name="client_id" id="clientFilter">
                         <option value="0">All Clients</option>
 
                         <?php foreach ($clients as $client): ?>
-                            <option
-                                value="<?= (int)$client['id'] ?>"
-                                data-hospital-id="<?= (int)($client['parent_hospital_id'] ?? 0) ?>"
-                                <?= $clientId === (int)$client['id']
+                        <option value="<?= (int)$client['id'] ?>"
+                            data-hospital-id="<?= (int)($client['parent_hospital_id'] ?? 0) ?>" <?= $clientId === (int)$client['id']
                                     ? 'selected'
-                                    : '' ?>
-                            >
-                                <?= e(
+                                    : '' ?>>
+                            <?= e(
                                     $client['client_code'] .
                                     ' - ' .
                                     $client['client_name'] .
@@ -982,7 +1018,7 @@ include __DIR__ . '/includes/layout-start.php';
                                             : ''
                                     )
                                 ) ?>
-                            </option>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -992,26 +1028,20 @@ include __DIR__ . '/includes/layout-start.php';
                         Financial Year
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="financial_year_id"
-                    >
+                    <select class="form-select" name="financial_year_id">
                         <option value="0">
                             All Financial Years
                         </option>
 
                         <?php foreach ($financialYears as $financialYear): ?>
-                            <option
-                                value="<?= (int)$financialYear['id'] ?>"
-                                <?= $financialYearId === (int)$financialYear['id']
+                        <option value="<?= (int)$financialYear['id'] ?>" <?= $financialYearId === (int)$financialYear['id']
                                     ? 'selected'
-                                    : '' ?>
-                            >
-                                <?= e($financialYear['year_label']) ?>
-                                <?= $financialYear['is_current']
+                                    : '' ?>>
+                            <?= e($financialYear['year_label']) ?>
+                            <?= $financialYear['is_current']
                                     ? ' (Current)'
                                     : '' ?>
-                            </option>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -1021,33 +1051,21 @@ include __DIR__ . '/includes/layout-start.php';
                         Payment Status
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="payment_status"
-                    >
+                    <select class="form-select" name="payment_status">
                         <option value="">All Outstanding</option>
-                        <option
-                            value="unpaid"
-                            <?= $paymentStatus === 'unpaid'
+                        <option value="unpaid" <?= $paymentStatus === 'unpaid'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Unpaid
                         </option>
-                        <option
-                            value="partially_paid"
-                            <?= $paymentStatus === 'partially_paid'
+                        <option value="partially_paid" <?= $paymentStatus === 'partially_paid'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Partially Paid
                         </option>
-                        <option
-                            value="overdue"
-                            <?= $paymentStatus === 'overdue'
+                        <option value="overdue" <?= $paymentStatus === 'overdue'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Overdue
                         </option>
                     </select>
@@ -1060,12 +1078,7 @@ include __DIR__ . '/includes/layout-start.php';
                         Invoice From
                     </label>
 
-                    <input
-                        class="form-control"
-                        type="date"
-                        name="date_from"
-                        value="<?= e($dateFrom) ?>"
-                    >
+                    <input class="form-control" type="date" name="date_from" value="<?= e($dateFrom) ?>">
                 </div>
 
                 <div>
@@ -1073,12 +1086,7 @@ include __DIR__ . '/includes/layout-start.php';
                         Invoice To
                     </label>
 
-                    <input
-                        class="form-control"
-                        type="date"
-                        name="date_to"
-                        value="<?= e($dateTo) ?>"
-                    >
+                    <input class="form-control" type="date" name="date_to" value="<?= e($dateTo) ?>">
                 </div>
 
                 <div>
@@ -1086,21 +1094,15 @@ include __DIR__ . '/includes/layout-start.php';
                         Ageing
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="age_bucket"
-                    >
+                    <select class="form-select" name="age_bucket">
                         <option value="">All Ageing</option>
 
                         <?php foreach ($allowedAgeBuckets as $bucket): ?>
-                            <option
-                                value="<?= e($bucket) ?>"
-                                <?= $ageBucket === $bucket
+                        <option value="<?= e($bucket) ?>" <?= $ageBucket === $bucket
                                     ? 'selected'
-                                    : '' ?>
-                            >
-                                <?= e($ageLabel($bucket)) ?>
-                            </option>
+                                    : '' ?>>
+                            <?= e($ageLabel($bucket)) ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -1110,56 +1112,35 @@ include __DIR__ . '/includes/layout-start.php';
                         Sort By
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="sort"
-                    >
-                        <option
-                            value="due_date_asc"
-                            <?= $sort === 'due_date_asc'
+                    <select class="form-select" name="sort">
+                        <option value="due_date_asc" <?= $sort === 'due_date_asc'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Due Date: Earliest
                         </option>
-                        <option
-                            value="due_date_desc"
-                            <?= $sort === 'due_date_desc'
+                        <option value="due_date_desc" <?= $sort === 'due_date_desc'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Due Date: Latest
                         </option>
-                        <option
-                            value="balance_desc"
-                            <?= $sort === 'balance_desc'
+                        <option value="balance_desc" <?= $sort === 'balance_desc'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Balance: High to Low
                         </option>
-                        <option
-                            value="balance_asc"
-                            <?= $sort === 'balance_asc'
+                        <option value="balance_asc" <?= $sort === 'balance_asc'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Balance: Low to High
                         </option>
-                        <option
-                            value="invoice_date_desc"
-                            <?= $sort === 'invoice_date_desc'
+                        <option value="invoice_date_desc" <?= $sort === 'invoice_date_desc'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Invoice Date: Latest
                         </option>
-                        <option
-                            value="invoice_date_asc"
-                            <?= $sort === 'invoice_date_asc'
+                        <option value="invoice_date_asc" <?= $sort === 'invoice_date_asc'
                                 ? 'selected'
-                                : '' ?>
-                        >
+                                : '' ?>>
                             Invoice Date: Oldest
                         </option>
                     </select>
@@ -1170,35 +1151,23 @@ include __DIR__ . '/includes/layout-start.php';
                         Rows
                     </label>
 
-                    <select
-                        class="form-select"
-                        name="per_page"
-                    >
+                    <select class="form-select" name="per_page">
                         <?php foreach ([10, 20, 50, 100] as $size): ?>
-                            <option
-                                value="<?= $size ?>"
-                                <?= $perPage === $size
+                        <option value="<?= $size ?>" <?= $perPage === $size
                                     ? 'selected'
-                                    : '' ?>
-                            >
-                                <?= $size ?>
-                            </option>
+                                    : '' ?>>
+                            <?= $size ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
-                <button
-                    class="btn btn-brand"
-                    type="submit"
-                >
+                <button class="btn btn-brand" type="submit">
                     <i data-lucide="list-filter"></i>
                     Apply
                 </button>
 
-                <a
-                    class="btn btn-light"
-                    href="<?= e(app_url('outstanding-invoices.php')) ?>"
-                >
+                <a class="btn btn-light" href="<?= e(app_url('outstanding-invoices.php')) ?>">
                     <i data-lucide="rotate-ccw"></i>
                     Reset
                 </a>
@@ -1272,17 +1241,14 @@ include __DIR__ . '/includes/layout-start.php';
             </div>
 
             <?php if ($ageBucket !== ''): ?>
-                <a
-                    class="btn btn-sm btn-light"
-                    href="<?= e(
+            <a class="btn btn-sm btn-light" href="<?= e(
                         $buildAgeUrl(
                             $ageBucket,
                             $_GET
                         )
-                    ) ?>"
-                >
-                    Clear Ageing
-                </a>
+                    ) ?>">
+                Clear Ageing
+            </a>
             <?php endif; ?>
         </div>
 
@@ -1313,22 +1279,19 @@ include __DIR__ . '/includes/layout-start.php';
             ?>
 
             <?php foreach ($ageCards as $bucket => [$label, $amount]): ?>
-                <a
-                    class="ageing-card <?= $ageBucket === $bucket
+            <a class="ageing-card <?= $ageBucket === $bucket
                         ? 'active'
-                        : '' ?>"
-                    href="<?= e(
+                        : '' ?>" href="<?= e(
                         $buildAgeUrl(
                             $bucket,
                             $_GET
                         )
-                    ) ?>"
-                >
-                    <small><?= e($label) ?></small>
-                    <strong>
-                        ₹<?= number_format($amount, 2) ?>
-                    </strong>
-                </a>
+                    ) ?>">
+                <small><?= e($label) ?></small>
+                <strong>
+                    ₹<?= number_format($amount, 2) ?>
+                </strong>
+            </a>
             <?php endforeach; ?>
         </div>
     </section>
@@ -1336,6 +1299,19 @@ include __DIR__ . '/includes/layout-start.php';
     <section class="card-ui p-3 outstanding-table-card">
         <div class="outstanding-desktop-table table-responsive">
             <table class="table align-middle mb-0 outstanding-table">
+                <colgroup>
+                    <col class="col-invoice">
+                    <col class="col-party">
+                    <col class="col-patient">
+                    <col class="col-date">
+                    <col class="col-date">
+                    <col class="col-ageing">
+                    <col class="col-money">
+                    <col class="col-money">
+                    <col class="col-money">
+                    <col class="col-status">
+                    <col class="col-actions">
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Invoice</th>
@@ -1354,26 +1330,23 @@ include __DIR__ . '/includes/layout-start.php';
 
                 <tbody>
                     <?php if (!$invoices): ?>
-                        <tr>
-                            <td
-                                colspan="11"
-                                class="text-center text-muted py-5"
-                            >
-                                <i data-lucide="badge-check"></i>
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-5">
+                            <i data-lucide="badge-check"></i>
 
-                                <div class="fw-bold mt-2">
-                                    No outstanding invoices found
-                                </div>
+                            <div class="fw-bold mt-2">
+                                No outstanding invoices found
+                            </div>
 
-                                <small>
-                                    All matching issued invoices are fully paid.
-                                </small>
-                            </td>
-                        </tr>
+                            <small>
+                                All matching issued invoices are fully paid.
+                            </small>
+                        </td>
+                    </tr>
                     <?php endif; ?>
 
                     <?php foreach ($invoices as $invoice): ?>
-                        <?php
+                    <?php
                         $isOverdue =
                             !empty($invoice['due_date'])
                             && $invoice['due_date'] < date('Y-m-d');
@@ -1401,85 +1374,82 @@ include __DIR__ . '/includes/layout-start.php';
                             'age_' . (string)$invoice['age_bucket'];
                         ?>
 
-                        <tr class="<?= $isOverdue
+                    <tr class="<?= $isOverdue
                             ? 'outstanding-overdue-row'
                             : '' ?>">
-                            <td>
-                                <a
-                                    class="outstanding-number"
-                                    href="<?= e(
+                        <td>
+                            <a class="outstanding-number" href="<?= e(
                                         app_url(
                                             'invoice-view.php?id=' .
                                             (int)$invoice['id']
                                         )
-                                    ) ?>"
-                                >
-                                    <?= e($invoice['invoice_number']) ?>
-                                </a>
+                                    ) ?>">
+                                <?= e($invoice['invoice_number']) ?>
+                            </a>
 
-                                <small class="d-block text-muted">
-                                    FY:
-                                    <?= e(
+                            <small class="d-block text-muted">
+                                FY:
+                                <?= e(
                                         $invoice['financial_year_label']
                                     ) ?>
-                                </small>
-                            </td>
+                            </small>
+                        </td>
 
-                            <td>
-                                <div class="outstanding-party">
-                                    <?= e($displayHospital) ?>
-                                </div>
+                        <td>
+                            <div class="outstanding-party">
+                                <?= e($displayHospital) ?>
+                            </div>
 
-                                <?php if ($displayClient !== ''): ?>
-                                    <div class="outstanding-meta">
-                                        Client:
-                                        <?= e($displayClient) ?>
-                                    </div>
-                                <?php endif; ?>
+                            <?php if ($displayClient !== ''): ?>
+                            <div class="outstanding-meta">
+                                Client:
+                                <?= e($displayClient) ?>
+                            </div>
+                            <?php endif; ?>
 
-                                <div class="outstanding-meta">
-                                    <?= e($invoice['client_code']) ?>
-                                    ·
-                                    <?= e($invoice['client_type_name']) ?>
-                                </div>
-                            </td>
+                            <div class="outstanding-meta">
+                                <?= e($invoice['client_code']) ?>
+                                ·
+                                <?= e($invoice['client_type_name']) ?>
+                            </div>
+                        </td>
 
-                            <td>
-                                <strong>
-                                    <?= e(
+                        <td>
+                            <strong>
+                                <?= e(
                                         $invoice['patient_name']
                                         ?: '—'
                                     ) ?>
-                                </strong>
+                            </strong>
 
-                                <?php if (
+                            <?php if (
                                     $invoice['patient_reference_no']
                                 ): ?>
-                                    <small class="d-block text-muted">
-                                        <?= e(
+                            <small class="d-block text-muted">
+                                <?= e(
                                             $invoice[
                                                 'patient_reference_no'
                                             ]
                                         ) ?>
-                                    </small>
-                                <?php endif; ?>
+                            </small>
+                            <?php endif; ?>
 
-                                <?php if (
+                            <?php if (
                                     $invoice['hospital_reference_no']
                                 ): ?>
-                                    <small class="d-block text-muted">
-                                        Hospital Ref:
-                                        <?= e(
+                            <small class="d-block text-muted">
+                                Hospital Ref:
+                                <?= e(
                                             $invoice[
                                                 'hospital_reference_no'
                                             ]
                                         ) ?>
-                                    </small>
-                                <?php endif; ?>
-                            </td>
+                            </small>
+                            <?php endif; ?>
+                        </td>
 
-                            <td>
-                                <?= e(
+                        <td>
+                            <?= e(
                                     date(
                                         'd-m-Y',
                                         strtotime(
@@ -1487,14 +1457,14 @@ include __DIR__ . '/includes/layout-start.php';
                                         )
                                     )
                                 ) ?>
-                            </td>
+                        </td>
 
-                            <td>
-                                <?php if ($invoice['due_date']): ?>
-                                    <span class="<?= $isOverdue
+                        <td>
+                            <?php if ($invoice['due_date']): ?>
+                            <span class="<?= $isOverdue
                                         ? 'text-danger fw-bold'
                                         : '' ?>">
-                                        <?= e(
+                                <?= e(
                                             date(
                                                 'd-m-Y',
                                                 strtotime(
@@ -1502,82 +1472,76 @@ include __DIR__ . '/includes/layout-start.php';
                                                 )
                                             )
                                         ) ?>
-                                    </span>
-                                <?php else: ?>
-                                    —
-                                <?php endif; ?>
-                            </td>
+                            </span>
+                            <?php else: ?>
+                            —
+                            <?php endif; ?>
+                        </td>
 
-                            <td>
-                                <span class="outstanding-pill <?= e(
+                        <td>
+                            <span class="outstanding-pill <?= e(
                                     $ageClass
                                 ) ?>">
-                                    <?= e(
+                                <?= e(
                                         $ageLabel(
                                             (string)$invoice['age_bucket']
                                         )
                                     ) ?>
-                                </span>
+                            </span>
 
-                                <?php if (
+                            <?php if (
                                     (int)$invoice['overdue_days'] > 0
                                 ): ?>
-                                    <small class="d-block text-danger mt-1">
-                                        <?= number_format(
+                            <small class="d-block text-danger mt-1">
+                                <?= number_format(
                                             (int)$invoice['overdue_days']
                                         ) ?>
-                                        days overdue
-                                    </small>
-                                <?php endif; ?>
-                            </td>
+                                days overdue
+                            </small>
+                            <?php endif; ?>
+                        </td>
 
-                            <td class="outstanding-amount">
-                                ₹<?= number_format(
+                        <td class="outstanding-amount">
+                            ₹<?= number_format(
                                     (float)$invoice['grand_total'],
                                     2
                                 ) ?>
-                            </td>
+                        </td>
 
-                            <td class="outstanding-amount">
-                                ₹<?= number_format(
+                        <td class="outstanding-amount">
+                            ₹<?= number_format(
                                     (float)$invoice['received_amount'],
                                     2
                                 ) ?>
-                            </td>
+                        </td>
 
-                            <td class="outstanding-balance">
-                                ₹<?= number_format(
+                        <td class="outstanding-balance">
+                            ₹<?= number_format(
                                     (float)$invoice['balance_amount'],
                                     2
                                 ) ?>
-                            </td>
+                        </td>
 
-                            <td>
-                                <span class="outstanding-pill <?= e(
+                        <td>
+                            <span class="outstanding-pill <?= e(
                                     $paymentClass
                                 ) ?>">
-                                    <?= e($displayPaymentStatus) ?>
-                                </span>
-                            </td>
+                                <?= e($displayPaymentStatus) ?>
+                            </span>
+                        </td>
 
-                            <td>
-                                <div class="outstanding-actions">
-                                    <a
-                                        class="btn btn-sm btn-light"
-                                        href="<?= e(
+                        <td>
+                            <div class="outstanding-actions">
+                                <a class="btn btn-sm btn-light action-icon-btn" title="View" href="<?= e(
                                             app_url(
                                                 'invoice-view.php?id=' .
                                                 (int)$invoice['id']
                                             )
-                                        ) ?>"
-                                    >
-                                        <i data-lucide="eye"></i>
-                                        View
-                                    </a>
+                                        ) ?>">
+                                    <i data-lucide="eye"></i>
+                                </a>
 
-                                    <a
-                                        class="btn btn-sm btn-brand"
-                                        href="<?= e(
+                                <a class="btn btn-sm btn-brand action-icon-btn" title="Record Payment" href="<?= e(
                                             app_url(
                                                 'payment-form.php?' .
                                                 http_build_query([
@@ -1587,28 +1551,21 @@ include __DIR__ . '/includes/layout-start.php';
                                                         (int)$invoice['client_id'],
                                                 ])
                                             )
-                                        ) ?>"
-                                    >
-                                        <i data-lucide="circle-dollar-sign"></i>
-                                        Pay
-                                    </a>
+                                        ) ?>">
+                                    <i data-lucide="circle-dollar-sign"></i>
+                                </a>
 
-                                    <a
-                                        class="btn btn-sm btn-outline-secondary"
-                                        href="<?= e(
+                                <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print" href="<?= e(
                                             app_url(
                                                 'invoice-print-viewer.php?id=' .
                                                 (int)$invoice['id']
                                             )
-                                        ) ?>"
-                                        target="_blank"
-                                    >
-                                        <i data-lucide="printer"></i>
-                                        Print
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
+                                        ) ?>" target="_blank">
+                                    <i data-lucide="printer"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -1616,17 +1573,17 @@ include __DIR__ . '/includes/layout-start.php';
 
         <div class="outstanding-mobile-list">
             <?php if (!$invoices): ?>
-                <div class="text-center text-muted py-5">
-                    <i data-lucide="badge-check"></i>
+            <div class="text-center text-muted py-5">
+                <i data-lucide="badge-check"></i>
 
-                    <div class="fw-bold mt-2">
-                        No outstanding invoices found
-                    </div>
+                <div class="fw-bold mt-2">
+                    No outstanding invoices found
                 </div>
+            </div>
             <?php endif; ?>
 
             <?php foreach ($invoices as $invoice): ?>
-                <?php
+            <?php
                 $isOverdue =
                     !empty($invoice['due_date'])
                     && $invoice['due_date'] < date('Y-m-d');
@@ -1651,23 +1608,20 @@ include __DIR__ . '/includes/layout-start.php';
                     );
                 ?>
 
-                <article class="outstanding-mobile-card">
-                    <div class="d-flex justify-content-between gap-2">
-                        <div>
-                            <a
-                                class="outstanding-number"
-                                href="<?= e(
+            <article class="outstanding-mobile-card">
+                <div class="d-flex justify-content-between gap-2">
+                    <div>
+                        <a class="outstanding-number" href="<?= e(
                                     app_url(
                                         'invoice-view.php?id=' .
                                         (int)$invoice['id']
                                     )
-                                ) ?>"
-                            >
-                                <?= e($invoice['invoice_number']) ?>
-                            </a>
+                                ) ?>">
+                            <?= e($invoice['invoice_number']) ?>
+                        </a>
 
-                            <small class="d-block text-muted">
-                                <?= e(
+                        <small class="d-block text-muted">
+                            <?= e(
                                     date(
                                         'd-m-Y',
                                         strtotime(
@@ -1675,63 +1629,63 @@ include __DIR__ . '/includes/layout-start.php';
                                         )
                                     )
                                 ) ?>
-                            </small>
-                        </div>
+                        </small>
+                    </div>
 
-                        <span class="outstanding-pill <?= e(
+                    <span class="outstanding-pill <?= e(
                             $paymentClass
                         ) ?>">
-                            <?= e($displayPaymentStatus) ?>
-                        </span>
-                    </div>
+                        <?= e($displayPaymentStatus) ?>
+                    </span>
+                </div>
 
-                    <div class="mt-3">
-                        <strong><?= e($displayHospital) ?></strong>
+                <div class="mt-3">
+                    <strong><?= e($displayHospital) ?></strong>
 
-                        <?php if ($displayClient !== ''): ?>
-                            <small class="d-block text-muted">
-                                Client: <?= e($displayClient) ?>
-                            </small>
-                        <?php endif; ?>
-                    </div>
+                    <?php if ($displayClient !== ''): ?>
+                    <small class="d-block text-muted">
+                        Client: <?= e($displayClient) ?>
+                    </small>
+                    <?php endif; ?>
+                </div>
 
-                    <div class="outstanding-mobile-values">
-                        <div>
-                            <small>Total</small>
-                            <strong>
-                                ₹<?= number_format(
+                <div class="outstanding-mobile-values">
+                    <div>
+                        <small>Total</small>
+                        <strong>
+                            ₹<?= number_format(
                                     (float)$invoice['grand_total'],
                                     2
                                 ) ?>
-                            </strong>
-                        </div>
+                        </strong>
+                    </div>
 
-                        <div>
-                            <small>Received</small>
-                            <strong>
-                                ₹<?= number_format(
+                    <div>
+                        <small>Received</small>
+                        <strong>
+                            ₹<?= number_format(
                                     (float)$invoice['received_amount'],
                                     2
                                 ) ?>
-                            </strong>
-                        </div>
+                        </strong>
+                    </div>
 
-                        <div>
-                            <small>Balance</small>
-                            <strong class="text-danger">
-                                ₹<?= number_format(
+                    <div>
+                        <small>Balance</small>
+                        <strong class="text-danger">
+                            ₹<?= number_format(
                                     (float)$invoice['balance_amount'],
                                     2
                                 ) ?>
-                            </strong>
-                        </div>
+                        </strong>
+                    </div>
 
-                        <div>
-                            <small>Due Date</small>
-                            <strong class="<?= $isOverdue
+                    <div>
+                        <small>Due Date</small>
+                        <strong class="<?= $isOverdue
                                 ? 'text-danger'
                                 : '' ?>">
-                                <?= $invoice['due_date']
+                            <?= $invoice['due_date']
                                     ? e(
                                         date(
                                             'd-m-Y',
@@ -1741,48 +1695,42 @@ include __DIR__ . '/includes/layout-start.php';
                                         )
                                     )
                                     : '—' ?>
-                            </strong>
-                        </div>
+                        </strong>
+                    </div>
 
-                        <div>
-                            <small>Patient</small>
-                            <strong>
-                                <?= e(
+                    <div>
+                        <small>Patient</small>
+                        <strong>
+                            <?= e(
                                     $invoice['patient_name']
                                     ?: '—'
                                 ) ?>
-                            </strong>
-                        </div>
+                        </strong>
+                    </div>
 
-                        <div>
-                            <small>Ageing</small>
-                            <strong>
-                                <?= e(
+                    <div>
+                        <small>Ageing</small>
+                        <strong>
+                            <?= e(
                                     $ageLabel(
                                         (string)$invoice['age_bucket']
                                     )
                                 ) ?>
-                            </strong>
-                        </div>
+                        </strong>
                     </div>
+                </div>
 
-                    <div class="outstanding-actions mt-3">
-                        <a
-                            class="btn btn-sm btn-light"
-                            href="<?= e(
+                <div class="outstanding-actions mt-3">
+                    <a class="btn btn-sm btn-light action-icon-btn" title="View" href="<?= e(
                                 app_url(
                                     'invoice-view.php?id=' .
                                     (int)$invoice['id']
                                 )
-                            ) ?>"
-                        >
-                            <i data-lucide="eye"></i>
-                            View
-                        </a>
+                            ) ?>">
+                        <i data-lucide="eye"></i>
+                    </a>
 
-                        <a
-                            class="btn btn-sm btn-brand"
-                            href="<?= e(
+                    <a class="btn btn-sm btn-brand action-icon-btn" title="Record Payment" href="<?= e(
                                 app_url(
                                     'payment-form.php?' .
                                     http_build_query([
@@ -1792,67 +1740,57 @@ include __DIR__ . '/includes/layout-start.php';
                                             (int)$invoice['client_id'],
                                     ])
                                 )
-                            ) ?>"
-                        >
-                            <i data-lucide="circle-dollar-sign"></i>
-                            Record Payment
-                        </a>
+                            ) ?>">
+                        <i data-lucide="circle-dollar-sign"></i>
+                    </a>
 
-                        <a
-                            class="btn btn-sm btn-outline-secondary"
-                            href="<?= e(
+                    <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print" href="<?= e(
                                 app_url(
                                     'invoice-print-viewer.php?id=' .
                                     (int)$invoice['id']
                                 )
-                            ) ?>"
-                            target="_blank"
-                        >
-                            <i data-lucide="printer"></i>
-                            Print
-                        </a>
-                    </div>
-                </article>
+                            ) ?>" target="_blank">
+                        <i data-lucide="printer"></i>
+                    </a>
+                </div>
+            </article>
             <?php endforeach; ?>
         </div>
 
         <?php if ($totalRows > 0): ?>
-            <div class="outstanding-pagination">
-                <small class="text-muted">
-                    Showing
-                    <?= number_format($offset + 1) ?>
-                    to
-                    <?= number_format(
+        <div class="outstanding-pagination">
+            <small class="text-muted">
+                Showing
+                <?= number_format($offset + 1) ?>
+                to
+                <?= number_format(
                         min(
                             $offset + $perPage,
                             $totalRows
                         )
                     ) ?>
-                    of
-                    <?= number_format($totalRows) ?>
-                    outstanding invoices
-                </small>
+                of
+                <?= number_format($totalRows) ?>
+                outstanding invoices
+            </small>
 
-                <?php if ($totalPages > 1): ?>
-                    <nav aria-label="Outstanding invoice pagination">
-                        <ul class="pagination pagination-sm">
-                            <li class="page-item <?= $page <= 1
+            <?php if ($totalPages > 1): ?>
+            <nav aria-label="Outstanding invoice pagination">
+                <ul class="pagination pagination-sm">
+                    <li class="page-item <?= $page <= 1
                                 ? 'disabled'
                                 : '' ?>">
-                                <a
-                                    class="page-link"
-                                    href="<?= e(
+                        <a class="page-link" href="<?= e(
                                         $buildPageUrl(
                                             max(1, $page - 1),
                                             $queryWithoutPage
                                         )
-                                    ) ?>"
-                                >
-                                    Previous
-                                </a>
-                            </li>
+                                    ) ?>">
+                            Previous
+                        </a>
+                    </li>
 
-                            <?php
+                    <?php
                             $pageStart = max(1, $page - 2);
                             $pageEnd = min(
                                 $totalPages,
@@ -1860,80 +1798,69 @@ include __DIR__ . '/includes/layout-start.php';
                             );
                             ?>
 
-                            <?php if ($pageStart > 1): ?>
-                                <li class="page-item">
-                                    <a
-                                        class="page-link"
-                                        href="<?= e(
+                    <?php if ($pageStart > 1): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="<?= e(
                                             $buildPageUrl(
                                                 1,
                                                 $queryWithoutPage
                                             )
-                                        ) ?>"
-                                    >
-                                        1
-                                    </a>
-                                </li>
+                                        ) ?>">
+                            1
+                        </a>
+                    </li>
 
-                                <?php if ($pageStart > 2): ?>
-                                    <li class="page-item disabled">
-                                        <span class="page-link">…</span>
-                                    </li>
-                                <?php endif; ?>
-                            <?php endif; ?>
+                    <?php if ($pageStart > 2): ?>
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    <?php endif; ?>
+                    <?php endif; ?>
 
-                            <?php for (
+                    <?php for (
                                 $pageNumber = $pageStart;
                                 $pageNumber <= $pageEnd;
                                 $pageNumber++
                             ): ?>
-                                <li class="page-item <?= $pageNumber === $page
+                    <li class="page-item <?= $pageNumber === $page
                                     ? 'active'
                                     : '' ?>">
-                                    <a
-                                        class="page-link"
-                                        href="<?= e(
+                        <a class="page-link" href="<?= e(
                                             $buildPageUrl(
                                                 $pageNumber,
                                                 $queryWithoutPage
                                             )
-                                        ) ?>"
-                                    >
-                                        <?= $pageNumber ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
+                                        ) ?>">
+                            <?= $pageNumber ?>
+                        </a>
+                    </li>
+                    <?php endfor; ?>
 
-                            <?php if ($pageEnd < $totalPages): ?>
-                                <?php if (
+                    <?php if ($pageEnd < $totalPages): ?>
+                    <?php if (
                                     $pageEnd < $totalPages - 1
                                 ): ?>
-                                    <li class="page-item disabled">
-                                        <span class="page-link">…</span>
-                                    </li>
-                                <?php endif; ?>
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    <?php endif; ?>
 
-                                <li class="page-item">
-                                    <a
-                                        class="page-link"
-                                        href="<?= e(
+                    <li class="page-item">
+                        <a class="page-link" href="<?= e(
                                             $buildPageUrl(
                                                 $totalPages,
                                                 $queryWithoutPage
                                             )
-                                        ) ?>"
-                                    >
-                                        <?= $totalPages ?>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
+                                        ) ?>">
+                            <?= $totalPages ?>
+                        </a>
+                    </li>
+                    <?php endif; ?>
 
-                            <li class="page-item <?= $page >= $totalPages
+                    <li class="page-item <?= $page >= $totalPages
                                 ? 'disabled'
                                 : '' ?>">
-                                <a
-                                    class="page-link"
-                                    href="<?= e(
+                        <a class="page-link" href="<?= e(
                                         $buildPageUrl(
                                             min(
                                                 $totalPages,
@@ -1941,15 +1868,14 @@ include __DIR__ . '/includes/layout-start.php';
                                             ),
                                             $queryWithoutPage
                                         )
-                                    ) ?>"
-                                >
-                                    Next
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
-            </div>
+                                    ) ?>">
+                            Next
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <?php endif; ?>
+        </div>
         <?php endif; ?>
     </section>
 </div>
@@ -1972,8 +1898,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             option.hidden =
-                hospitalId !== '0'
-                && option.dataset.hospitalId !== hospitalId;
+                hospitalId !== '0' &&
+                option.dataset.hospitalId !== hospitalId;
         });
 
         const selected =

@@ -41,6 +41,28 @@ include __DIR__ . '/includes/layout-start.php';
 .form-help{font-size:11px;color:var(--text-muted)}
 @media(max-width:767.98px){.module-search{max-width:none;width:100%}.module-toolbar{align-items:stretch}}
 </style>
+<style>
+.action-icon-btn{
+    width:36px;
+    height:36px;
+    padding:0 !important;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+}
+.action-icon-btn svg,
+.action-icon-btn i{
+    width:17px;
+    height:17px;
+}
+.action-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+</style>
+
 
 <div class="page-head">
     <div>
@@ -84,8 +106,8 @@ include __DIR__ . '/includes/layout-start.php';
                     <td><span class="status-badge <?= $category['status']==='active'?'status-active':'status-inactive' ?>"><?= e(ucfirst($category['status'])) ?></span></td>
                     <td><div class="action-group">
                         <button class="btn btn-sm btn-outline-primary" data-view-category data-record='<?= e(json_encode($category, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-category data-record='<?= e(json_encode($category, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button>
-                        <button class="btn btn-sm btn-outline-secondary" data-toggle-category data-id="<?= (int)$category['id'] ?>">Status</button>
-                        <button class="btn btn-sm btn-outline-danger" data-delete-category data-id="<?= (int)$category['id'] ?>">Delete</button>
+                        <button class="btn btn-sm btn-outline-secondary" data-toggle-category data-id="<?= (int)$category['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" data-delete-category data-id="<?= (int)$category['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button>
                     </div></td>
                 </tr>
             <?php endforeach; ?>
@@ -103,8 +125,8 @@ include __DIR__ . '/includes/layout-start.php';
                 <small class="text-muted d-block mt-2"><?= e($category['description'] ?: 'No description') ?></small>
                 <div class="action-group mt-3">
                     <button class="btn btn-sm btn-outline-primary" data-view-category data-record='<?= e(json_encode($category, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-category data-record='<?= e(json_encode($category, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button>
-                    <button class="btn btn-sm btn-outline-secondary" data-toggle-category data-id="<?= (int)$category['id'] ?>">Status</button>
-                    <button class="btn btn-sm btn-outline-danger ms-auto" data-delete-category data-id="<?= (int)$category['id'] ?>">Delete</button>
+                    <button class="btn btn-sm btn-outline-secondary" data-toggle-category data-id="<?= (int)$category['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button>
+                    <button class="btn btn-sm btn-outline-danger ms-auto" data-delete-category data-id="<?= (int)$category['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button>
                 </div>
             </article>
         <?php endforeach; ?>
