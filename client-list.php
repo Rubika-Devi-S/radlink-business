@@ -3,6 +3,12 @@ declare(strict_types=1);
 
 $pageTitle = 'Client List';
 require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/permissions.php';
+
+$canClientView = can_access('clients','view');
+$canClientEdit = can_access('clients','edit');
+$canClientDelete = can_access('clients','delete');
+$canClientStatus = can_access('clients','approve');
 
 $hospitalId = (int)($_GET['hospital_id'] ?? 0);
 $clientTypeId = (int)($_GET['client_type_id'] ?? 0);
@@ -75,15 +81,55 @@ $clients = $stmt->fetchAll();
 include __DIR__ . '/includes/layout-start.php';
 ?>
 <style>
-.client-toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px}
-.client-actions{display:flex;flex-wrap:wrap;gap:6px}
-.client-card{padding:15px}
-.client-card+.client-card{margin-top:10px}
-.status-pill{display:inline-flex;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}
-.status-active{background:#dcfce7;color:#15803d}
-.status-inactive{background:#f1f5f9;color:#64748b}
-@media(max-width:991.98px){.client-toolbar{grid-template-columns:1fr 1fr}}
-@media(max-width:767.98px){.client-toolbar{grid-template-columns:1fr}}
+.client-toolbar {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 10px
+}
+
+.client-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px
+}
+
+.client-card {
+    padding: 15px
+}
+
+.client-card+.client-card {
+    margin-top: 10px
+}
+
+.status-pill {
+    display: inline-flex;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #15803d
+}
+
+.status-inactive {
+    background: #f1f5f9;
+    color: #64748b
+}
+
+@media(max-width:991.98px) {
+    .client-toolbar {
+        grid-template-columns: 1fr 1fr
+    }
+}
+
+@media(max-width:767.98px) {
+    .client-toolbar {
+        grid-template-columns: 1fr
+    }
+}
 
 #clientModal .modal-dialog {
     height: calc(100vh - 32px);
@@ -143,6 +189,23 @@ include __DIR__ . '/includes/layout-start.php';
         margin: 0;
     }
 }
+
+<style>.client-actions .icon-action-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+
+.client-actions .icon-action-btn svg {
+    width: 18px;
+    height: 18px;
+}
+</style>
+
 </style>
 
 <div class="page-head">
@@ -152,159 +215,213 @@ include __DIR__ . '/includes/layout-start.php';
         <p>See which client belongs to which hospital.</p>
     </div>
     <button class="btn btn-brand" type="button" id="addClientButton">
-        <i data-lucide="plus"></i> Quick Add Client
+        <i data-lucide="plus"></i> Add Client
     </button>
 </div>
 
 <section class="card-ui p-3 mb-3">
-<form method="get" class="client-toolbar">
-    <input class="form-control" name="q" value="<?= e($search) ?>" placeholder="Search client, hospital, mobile, email, contact or city">
-    <select class="form-select" name="hospital_id">
-        <option value="">All Hospitals</option>
-        <?php foreach ($hospitals as $hospital): ?>
-            <option value="<?= (int)$hospital['id'] ?>" <?= $hospitalId === (int)$hospital['id'] ? 'selected' : '' ?>><?= e($hospital['client_code'] . ' - ' . $hospital['client_name']) ?></option>
-        <?php endforeach; ?>
-    </select>
-    <select class="form-select" name="client_type_id">
-        <option value="">All Client Types</option>
-        <?php foreach ($clientTypes as $type): ?>
-            <option value="<?= (int)$type['id'] ?>" <?= $clientTypeId === (int)$type['id'] ? 'selected' : '' ?>><?= e($type['type_name']) ?></option>
-        <?php endforeach; ?>
-    </select>
-    <select class="form-select" name="status">
-        <option value="">All Status</option>
-        <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
-        <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option>
-    </select>
-    <button class="btn btn-brand">Filter</button>
-</form>
+    <form method="get" class="client-toolbar">
+        <input class="form-control" name="q" value="<?= e($search) ?>"
+            placeholder="Search client, hospital, mobile, email, contact or city">
+        <select class="form-select" name="hospital_id">
+            <option value="">All Hospitals</option>
+            <?php foreach ($hospitals as $hospital): ?>
+            <option value="<?= (int)$hospital['id'] ?>" <?= $hospitalId === (int)$hospital['id'] ? 'selected' : '' ?>>
+                <?= e($hospital['client_code'] . ' - ' . $hospital['client_name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <select class="form-select" name="client_type_id">
+            <option value="">All Client Types</option>
+            <?php foreach ($clientTypes as $type): ?>
+            <option value="<?= (int)$type['id'] ?>" <?= $clientTypeId === (int)$type['id'] ? 'selected' : '' ?>>
+                <?= e($type['type_name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <select class="form-select" name="status">
+            <option value="">All Status</option>
+            <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
+            <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+        </select>
+        <button class="btn btn-brand">Filter</button>
+    </form>
 </section>
 
 <section class="card-ui p-3">
-<div class="desktop-table table-responsive">
-<table class="table align-middle mb-0">
-<thead><tr><th>Client</th><th>Hospital</th><th>Type</th><th>Contact</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
-<tbody>
-<?php if (!$clients): ?><tr><td colspan="7" class="text-center py-4 text-muted">No clients found.</td></tr><?php endif; ?>
-<?php foreach ($clients as $client): ?>
-<tr>
-<td><strong><?= e($client['client_name']) ?></strong><small class="d-block text-muted"><?= e($client['client_code']) ?></small></td>
-<td><strong><?= e($client['hospital_name']) ?></strong><small class="d-block text-muted"><?= e($client['hospital_code']) ?></small></td>
-<td><?= e($client['client_type_name']) ?></td>
-<td><?= e($client['mobile'] ?: '—') ?><small class="d-block text-muted"><?= e($client['email'] ?: '') ?></small></td>
-<td><?= e(implode(', ', array_filter([$client['city'], $client['district'], $client['state']]))) ?: '—' ?></td>
-<td><span class="status-pill <?= $client['status'] === 'active' ? 'status-active' : 'status-inactive' ?>"><?= e(ucfirst($client['status'])) ?></span></td>
-<td>
-<div class="client-actions">
-<button
-class="btn btn-sm btn-light"
-type="button"
-data-view-client
-data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'
->
-<i data-lucide="eye"></i> View
-</button>
-<button
-class="btn btn-sm btn-outline-primary"
-type="button"
-data-edit-client
-data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'
->
-<i data-lucide="pencil"></i> Edit
-</button>
-<a class="btn btn-sm btn-outline-primary" href="<?= e(app_url('invoices.php?client_id=' . (int)$client['id'])) ?>">Invoices</a>
-<button class="btn btn-sm btn-outline-secondary" data-action="toggle" data-entity="client" data-id="<?= (int)$client['id'] ?>">Status</button>
-<button class="btn btn-sm btn-outline-danger" data-action="delete" data-entity="client" data-id="<?= (int)$client['id'] ?>">Delete</button>
-</div>
-</td>
-</tr>
-<?php endforeach; ?>
-</tbody>
-</table>
-</div>
+    <div class="desktop-table table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Hospital</th>
+                    <th>Type</th>
+                    <th>Contact</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!$clients): ?><tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No clients found.</td>
+                </tr><?php endif; ?>
+                <?php foreach ($clients as $client): ?>
+                <tr>
+                    <td><strong><?= e($client['client_name']) ?></strong><small
+                            class="d-block text-muted"><?= e($client['client_code']) ?></small></td>
+                    <td><strong><?= e($client['hospital_name']) ?></strong><small
+                            class="d-block text-muted"><?= e($client['hospital_code']) ?></small></td>
+                    <td><?= e($client['client_type_name']) ?></td>
+                    <td><?= e($client['mobile'] ?: '—') ?><small
+                            class="d-block text-muted"><?= e($client['email'] ?: '') ?></small></td>
+                    <td><?= e(implode(', ', array_filter([$client['city'], $client['district'], $client['state']]))) ?: '—' ?>
+                    </td>
+                    <td><span
+                            class="status-pill <?= $client['status'] === 'active' ? 'status-active' : 'status-inactive' ?>"><?= e(ucfirst($client['status'])) ?></span>
+                    </td>
+                    <td>
+                        <div class="client-actions">
+                            <button class="btn btn-sm btn-light icon-action-btn" title="View" type="button"
+                                data-view-client
+                                data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>
+                                <i data-lucide="eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary icon-action-btn" title="Edit" type="button"
+                                data-edit-client
+                                data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>
+                                <i data-lucide="pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary icon-action-btn" title="Status"
+                                data-action="toggle" data-entity="client" data-id="<?= (int)$client['id'] ?>"><i
+                                    data-lucide="power"></i></button>
+                            <button class="btn btn-sm btn-outline-danger icon-action-btn" title="Delete"
+                                data-action="delete" data-entity="client" data-id="<?= (int)$client['id'] ?>"><i
+                                    data-lucide="trash-2"></i></button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
-<div class="mobile-card-list">
-<?php foreach ($clients as $client): ?>
-<article class="card-ui client-card">
-<div class="d-flex justify-content-between gap-2">
-<div><strong><?= e($client['client_name']) ?></strong><small class="d-block text-muted"><?= e($client['client_code']) ?></small></div>
-<span class="status-pill <?= $client['status'] === 'active' ? 'status-active' : 'status-inactive' ?>"><?= e(ucfirst($client['status'])) ?></span>
-</div>
-<div class="row g-2 mt-2 small">
-<div class="col-12">Hospital<br><strong><?= e($client['hospital_name']) ?></strong></div>
-<div class="col-6">Type<br><strong><?= e($client['client_type_name']) ?></strong></div>
-<div class="col-6">Mobile<br><strong><?= e($client['mobile'] ?: '—') ?></strong></div>
-</div>
-<div class="client-actions mt-3">
-<button
-class="btn btn-sm btn-light"
-type="button"
-data-view-client
-data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'
->
-<i data-lucide="eye"></i> View
-</button>
-<button
-class="btn btn-sm btn-outline-primary"
-type="button"
-data-edit-client
-data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'
->
-<i data-lucide="pencil"></i> Edit
-</button>
-<a class="btn btn-sm btn-outline-primary" href="<?= e(app_url('invoices.php?client_id=' . (int)$client['id'])) ?>">Invoices</a>
-<button class="btn btn-sm btn-outline-secondary" data-action="toggle" data-entity="client" data-id="<?= (int)$client['id'] ?>">Status</button>
-<button class="btn btn-sm btn-outline-danger ms-auto" data-action="delete" data-entity="client" data-id="<?= (int)$client['id'] ?>">Delete</button>
-</div>
-</article>
-<?php endforeach; ?>
-</div>
+    <div class="mobile-card-list">
+        <?php foreach ($clients as $client): ?>
+        <article class="card-ui client-card">
+            <div class="d-flex justify-content-between gap-2">
+                <div><strong><?= e($client['client_name']) ?></strong><small
+                        class="d-block text-muted"><?= e($client['client_code']) ?></small></div>
+                <span
+                    class="status-pill <?= $client['status'] === 'active' ? 'status-active' : 'status-inactive' ?>"><?= e(ucfirst($client['status'])) ?></span>
+            </div>
+            <div class="row g-2 mt-2 small">
+                <div class="col-12">Hospital<br><strong><?= e($client['hospital_name']) ?></strong></div>
+                <div class="col-6">Type<br><strong><?= e($client['client_type_name']) ?></strong></div>
+                <div class="col-6">Mobile<br><strong><?= e($client['mobile'] ?: '—') ?></strong></div>
+            </div>
+            <div class="client-actions mt-3">
+                <button class="btn btn-sm btn-light icon-action-btn" title="View" type="button" data-view-client
+                    data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>
+                    <i data-lucide="eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary icon-action-btn" title="Edit" type="button"
+                    data-edit-client data-record='<?= e(json_encode($client, JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>
+                    <i data-lucide="pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary icon-action-btn" title="Status" data-action="toggle"
+                    data-entity="client" data-id="<?= (int)$client['id'] ?>"><i data-lucide="power"></i></button>
+                <button class="btn btn-sm btn-outline-danger ms-auto icon-action-btn" title="Delete"
+                    data-action="delete" data-entity="client" data-id="<?= (int)$client['id'] ?>"><i
+                        data-lucide="trash-2"></i></button>
+            </div>
+        </article>
+        <?php endforeach; ?>
+    </div>
 </section>
 
 <div class="modal fade" id="clientModal" tabindex="-1">
-<div class="modal-dialog modal-xl modal-dialog-centered">
-<div class="modal-content card-ui">
-<form id="clientForm">
-<div class="modal-header">
-<div><h5 class="modal-title mb-1" id="clientModalTitle">Quick Add Client</h5><small class="text-muted" id="clientModalSubtitle">Select the hospital, enter client details and save.</small></div>
-<button class="btn-close" type="button" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-<input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-<input type="hidden" name="id">
-<input type="hidden" name="action" value="save">
-<div class="row g-3">
-<div class="col-md-6"><label class="form-label">Hospital</label><select class="form-select" name="parent_hospital_id" required><option value="">Select Hospital</option><?php foreach ($hospitals as $hospital): ?><option value="<?= (int)$hospital['id'] ?>"><?= e($hospital['client_code'] . ' - ' . $hospital['client_name']) ?></option><?php endforeach; ?></select></div>
-<div class="col-md-6"><label class="form-label">Client Type</label><select class="form-select" name="client_type_id" required><option value="">Select Type</option><?php foreach ($clientTypes as $type): ?><option value="<?= (int)$type['id'] ?>"><?= e($type['type_name']) ?></option><?php endforeach; ?></select></div>
-<div class="col-md-8"><label class="form-label">Client Name</label><input class="form-control" name="client_name" required></div>
-<div class="col-md-4"><label class="form-label">Client Code</label><input class="form-control text-uppercase" name="client_code" placeholder="Auto-generated"></div>
-<div class="col-md-6"><label class="form-label">Contact Person</label><input class="form-control" name="contact_person"></div>
-<div class="col-md-3"><label class="form-label">Mobile</label><input class="form-control" name="mobile"></div>
-<div class="col-md-3"><label class="form-label">Alternate Mobile</label><input class="form-control" name="alternate_mobile"></div>
-<div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email"></div>
-<div class="col-md-6"><label class="form-label">GST Number</label><input class="form-control text-uppercase" name="gst_number"></div>
-<div class="col-md-6"><label class="form-label">Address Line 1</label><input class="form-control" name="address_line_1"></div>
-<div class="col-md-6"><label class="form-label">Address Line 2</label><input class="form-control" name="address_line_2"></div>
-<div class="col-md-3"><label class="form-label">City</label><input class="form-control" name="city"></div>
-<div class="col-md-3"><label class="form-label">District</label><input class="form-control" name="district"></div>
-<div class="col-md-3"><label class="form-label">State</label><input class="form-control" name="state"></div>
-<div class="col-md-3"><label class="form-label">Postal Code</label><input class="form-control" name="postal_code"></div>
-<div class="col-md-4"><label class="form-label">Credit Period</label><input class="form-control" type="number" name="credit_period_days" min="0" value="0"></div>
-<div class="col-md-4"><label class="form-label">Billing Mode</label><select class="form-select" name="default_billing_mode"><option value="credit">Credit</option><option value="direct">Direct</option><option value="mixed">Mixed</option></select></div>
-<div class="col-md-4"><label class="form-label">Status</label><select class="form-select" name="status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-<div class="col-12"><label class="form-label">Notes</label><textarea class="form-control" name="notes" rows="3"></textarea></div>
-</div>
-</div>
-<div class="modal-footer">
-<button class="btn btn-light" type="button" data-bs-dismiss="modal">Cancel</button>
-<button class="btn btn-brand px-4" type="submit" id="clientModalSaveButton">
-<i data-lucide="save"></i>
-<span id="clientModalSaveText">Save Client</span>
-</button>
-</div>
-</form>
-</div>
-</div>
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content card-ui">
+            <form id="clientForm">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-1" id="clientModalTitle">Quick Add Client</h5><small
+                            class="text-muted" id="clientModalSubtitle">Select the hospital, enter client details and
+                            save.</small>
+                    </div>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="id">
+                    <input type="hidden" name="action" value="save">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Hospital</label><select class="form-select"
+                                name="parent_hospital_id" required>
+                                <option value="">Select Hospital</option><?php foreach ($hospitals as $hospital): ?>
+                                <option value="<?= (int)$hospital['id'] ?>">
+                                    <?= e($hospital['client_code'] . ' - ' . $hospital['client_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select></div>
+                        <div class="col-md-6"><label class="form-label">Client Type</label><select class="form-select"
+                                name="client_type_id" required>
+                                <option value="">Select Type</option><?php foreach ($clientTypes as $type): ?><option
+                                    value="<?= (int)$type['id'] ?>"><?= e($type['type_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select></div>
+                        <div class="col-md-8"><label class="form-label">Client Name</label><input class="form-control"
+                                name="client_name" required></div>
+                        <div class="col-md-4"><label class="form-label">Client Code</label><input
+                                class="form-control text-uppercase" name="client_code" placeholder="Auto-generated">
+                        </div>
+                        <div class="col-md-6"><label class="form-label">Contact Person</label><input
+                                class="form-control" name="contact_person"></div>
+                        <div class="col-md-3"><label class="form-label">Mobile</label><input class="form-control"
+                                name="mobile"></div>
+                        <div class="col-md-3"><label class="form-label">Alternate Mobile</label><input
+                                class="form-control" name="alternate_mobile"></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input class="form-control"
+                                type="email" name="email"></div>
+                        <div class="col-md-6"><label class="form-label">GST Number</label><input
+                                class="form-control text-uppercase" name="gst_number"></div>
+                        <div class="col-md-6"><label class="form-label">Address Line 1</label><input
+                                class="form-control" name="address_line_1"></div>
+                        <div class="col-md-6"><label class="form-label">Address Line 2</label><input
+                                class="form-control" name="address_line_2"></div>
+                        <div class="col-md-3"><label class="form-label">City</label><input class="form-control"
+                                name="city"></div>
+                        <div class="col-md-3"><label class="form-label">District</label><input class="form-control"
+                                name="district"></div>
+                        <div class="col-md-3"><label class="form-label">State</label><input class="form-control"
+                                name="state"></div>
+                        <div class="col-md-3"><label class="form-label">Postal Code</label><input class="form-control"
+                                name="postal_code"></div>
+                        <div class="col-md-4"><label class="form-label">Credit Period</label><input class="form-control"
+                                type="number" name="credit_period_days" min="0" value="0"></div>
+                        <div class="col-md-4"><label class="form-label">Billing Mode</label><select class="form-select"
+                                name="default_billing_mode">
+                                <option value="credit">Credit</option>
+                                <option value="direct">Direct</option>
+                                <option value="mixed">Mixed</option>
+                            </select></div>
+                        <div class="col-md-4"><label class="form-label">Status</label><select class="form-select"
+                                name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select></div>
+                        <div class="col-12"><label class="form-label">Notes</label><textarea class="form-control"
+                                name="notes" rows="3"></textarea></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-brand px-4" type="submit" id="clientModalSaveButton">
+                        <i data-lucide="save"></i>
+                        <span id="clientModalSaveText">Save Client</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -344,8 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         form.querySelectorAll('input, select, textarea').forEach(field => {
             if (
-                field.name === 'csrf_token'
-                || field.name === 'id'
+                field.name === 'csrf_token' ||
+                field.name === 'id'
             ) {
                 return;
             }
@@ -407,8 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(
-                '<?= e(app_url('api/client.php')) ?>',
-                {
+                '<?= e(app_url('api/client.php')) ?>', {
                     method: 'POST',
                     body: (() => {
                         const formData = new FormData(form);
@@ -431,9 +547,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 throw new Error(
                     raw.replace(/<[^>]*>/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                    || 'Invalid server response.'
+                    .replace(/\s+/g, ' ')
+                    .trim() ||
+                    'Invalid server response.'
                 );
             }
 
@@ -462,12 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('[data-action]').forEach(button => {
         button.addEventListener('click', async () => {
-            if (button.dataset.action === 'delete' && !confirm('Delete this client?')) return;
+            if (button.dataset.action === 'delete' && !confirm('Delete this client?'))
+                return;
 
             const fd = new FormData();
             fd.append('csrf_token', window.APP_CSRF);
             fd.append('action', button.dataset.action);
-                        fd.append('id', button.dataset.id);
+            fd.append('id', button.dataset.id);
 
             const response = await fetch('<?= e(app_url('api/client.php')) ?>', {
                 method: 'POST',
