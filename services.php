@@ -92,14 +92,14 @@ include __DIR__ . '/includes/layout-start.php';
  </div>
 
  <div class="desktop-table table-responsive">
-  <table class="table align-middle mb-0"><thead><tr><th>Service</th><th>Category</th><th>Unit</th><th>Rate</th><th>Tax</th><th>HSN/SAC</th><th>Status</th><th>Action</th></tr></thead><tbody>
-  <?php if(!$services): ?><tr><td colspan="8" class="text-center py-4 text-muted">No services found.</td></tr><?php endif; ?>
+  <table class="table align-middle mb-0"><thead><tr><th>Service</th><th>Category</th><th>Rate</th><th>Tax</th><th>HSN/SAC</th><th>Status</th><th>Action</th></tr></thead><tbody>
+  <?php if(!$services): ?><tr><td colspan="7" class="text-center py-4 text-muted">No services found.</td></tr><?php endif; ?>
   <?php foreach($services as $service): ?>
    <tr data-service-row data-category="<?= (int)$service['service_category_id'] ?>" data-search="<?= e(strtolower($service['service_code'].' '.$service['service_name'].' '.$service['category_name'].' '.$service['hsn_sac_code'])) ?>">
     <td><span class="code-pill"><?= e($service['service_code']) ?></span><div class="fw-bold mt-1"><?= e($service['service_name']) ?></div></td>
-    <td><?= e($service['category_name']) ?></td><td><?= e($service['unit_name']) ?></td><td>₹<?= number_format((float)$service['standard_rate'],2) ?></td><td><?= number_format((float)$service['tax_percent'],2) ?>%</td><td><?= e($service['hsn_sac_code'] ?: '—') ?></td>
+    <td><?= e($service['category_name']) ?></td><td>₹<?= number_format((float)$service['standard_rate'],2) ?></td><td><?= number_format((float)$service['tax_percent'],2) ?>%</td><td><?= e($service['hsn_sac_code'] ?: '—') ?></td>
     <td><span class="status-badge <?= $service['status']==='active'?'status-active':'status-inactive' ?>"><?= e(ucfirst($service['status'])) ?></span></td>
-    <td><div class="action-group"><button class="btn btn-sm btn-outline-primary" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button><button class="btn btn-sm btn-outline-secondary" data-toggle-service data-id="<?= (int)$service['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button><button class="btn btn-sm btn-outline-danger" data-delete-service data-id="<?= (int)$service['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button></div></td>
+    <td><div class="action-group"><button type="button" class="btn btn-sm btn-outline-primary action-icon-btn" title="View" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'><i data-lucide="eye"></i></button><button type="button" class="btn btn-sm btn-light action-icon-btn" title="Edit" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'><i data-lucide="pencil"></i></button><button type="button" class="btn btn-sm btn-outline-secondary action-icon-btn" data-toggle-service data-id="<?= (int)$service['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button><button type="button" class="btn btn-sm btn-outline-danger action-icon-btn" data-delete-service data-id="<?= (int)$service['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button></div></td>
    </tr>
   <?php endforeach; ?>
   </tbody></table>
@@ -110,7 +110,7 @@ include __DIR__ . '/includes/layout-start.php';
   <article class="card-ui mobile-record" data-service-row data-category="<?= (int)$service['service_category_id'] ?>" data-search="<?= e(strtolower($service['service_code'].' '.$service['service_name'].' '.$service['category_name'].' '.$service['hsn_sac_code'])) ?>">
    <div class="d-flex justify-content-between gap-2"><div><span class="code-pill"><?= e($service['service_code']) ?></span><strong class="d-block mt-2"><?= e($service['service_name']) ?></strong><small class="text-muted"><?= e($service['category_name']) ?></small></div><span class="status-badge <?= $service['status']==='active'?'status-active':'status-inactive' ?>"><?= e(ucfirst($service['status'])) ?></span></div>
    <div class="row g-2 mt-2 small"><div class="col-6">Rate: <strong>₹<?= number_format((float)$service['standard_rate'],2) ?></strong></div><div class="col-6">Tax: <strong><?= number_format((float)$service['tax_percent'],2) ?>%</strong></div></div>
-   <div class="action-group mt-3"><button class="btn btn-sm btn-outline-primary" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>View</button><button class="btn btn-sm btn-light" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'>Edit</button><button class="btn btn-sm btn-outline-secondary" data-toggle-service data-id="<?= (int)$service['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button><button class="btn btn-sm btn-outline-danger ms-auto" data-delete-service data-id="<?= (int)$service['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button></div>
+   <div class="action-group mt-3"><button type="button" class="btn btn-sm btn-outline-primary action-icon-btn" title="View" data-view-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'><i data-lucide="eye"></i></button><button type="button" class="btn btn-sm btn-light action-icon-btn" title="Edit" data-edit-service data-record='<?= e(json_encode($service,JSON_HEX_APOS|JSON_HEX_QUOT)) ?>'><i data-lucide="pencil"></i></button><button type="button" class="btn btn-sm btn-outline-secondary action-icon-btn" data-toggle-service data-id="<?= (int)$service['id'] ?>" title="Status"><i data-lucide="refresh-cw"></i></button><button type="button" class="btn btn-sm btn-outline-danger action-icon-btn ms-auto" data-delete-service data-id="<?= (int)$service['id'] ?>" title="Delete"><i data-lucide="trash-2"></i></button></div>
   </article>
  <?php endforeach; ?>
  </div>
@@ -126,7 +126,7 @@ include __DIR__ . '/includes/layout-start.php';
 <div class="col-md-4"><small class="text-muted">Category</small><div id="viewServiceCategory"></div></div>
 <div class="col-md-4"><small class="text-muted">Rate</small><div id="viewServiceRate"></div></div>
 <div class="col-md-4"><small class="text-muted">Tax</small><div id="viewServiceTax"></div></div>
-<div class="col-md-4"><small class="text-muted">Unit</small><div id="viewServiceUnit"></div></div>
+
 <div class="col-md-4"><small class="text-muted">HSN/SAC</small><div id="viewServiceHsn"></div></div>
 <div class="col-md-4"><small class="text-muted">Status</small><div id="viewServiceStatus"></div></div>
 <div class="col-12"><small class="text-muted">Description</small><div id="viewServiceDescription"></div></div>
@@ -138,9 +138,9 @@ include __DIR__ . '/includes/layout-start.php';
 <div class="modal-body">
 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="id" id="serviceId">
 <div class="row g-3">
- <div class="col-md-6"><label class="form-label">Category</label><select class="form-select" name="service_category_id" id="serviceCategoryId" required><option value="">Select category</option><?php foreach($categories as $c): ?><option value="<?= (int)$c['id'] ?>"><?= e($c['category_code'].' - '.$c['category_name']) ?></option><?php endforeach; ?></select></div>
- <div class="col-md-3"><label class="form-label">Service Code</label><input class="form-control text-uppercase" name="service_code" id="serviceCode" maxlength="50" required></div>
- <div class="col-md-3"><label class="form-label">Unit</label><input class="form-control text-uppercase" name="unit_name" id="unitName" value="QTY" maxlength="30" required></div>
+ <div class="col-md-8"><label class="form-label">Category</label><select class="form-select" name="service_category_id" id="serviceCategoryId" required><option value="">Select category</option><?php foreach($categories as $c): ?><option value="<?= (int)$c['id'] ?>"><?= e($c['category_code'].' - '.$c['category_name']) ?></option><?php endforeach; ?></select></div>
+ <div class="col-md-4"><label class="form-label">Service Code</label><input class="form-control text-uppercase" name="service_code" id="serviceCode" maxlength="50" required></div>
+ <input type="hidden" name="unit_name" id="unitName" value="SERVICE">
  <div class="col-12"><label class="form-label">Service Name</label><input class="form-control" name="service_name" id="serviceName" maxlength="200" required></div>
  <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" id="serviceDescription" rows="2"></textarea></div>
  <div class="col-md-4"><label class="form-label">Standard Rate</label><input type="number" class="form-control" name="standard_rate" id="standardRate" min="0" step="0.01" value="0.00" required></div>
@@ -153,25 +153,56 @@ include __DIR__ . '/includes/layout-start.php';
 </form></div></div></div>
 
 <script>
-document.addEventListener('DOMContentLoaded',()=>{
- const form=document.getElementById('serviceForm'),modal=bootstrap.Modal.getOrCreateInstance(document.getElementById('serviceModal'));
- const serviceViewModal=bootstrap.Modal.getOrCreateInstance(document.getElementById('serviceViewModal'));
- document.querySelectorAll('[data-view-service]').forEach(btn=>btn.addEventListener('click',()=>{
-  const r=JSON.parse(btn.dataset.record);
-  viewServiceCode.textContent=r.service_code;
-  viewServiceName.textContent=r.service_name;
-  viewServiceCategory.textContent=r.category_name;
-  viewServiceRate.textContent='₹'+Number(r.standard_rate).toFixed(2);
-  viewServiceTax.textContent=Number(r.tax_percent).toFixed(2)+'%';
-  viewServiceUnit.textContent=r.unit_name;
-  viewServiceHsn.textContent=r.hsn_sac_code||'—';
-  viewServiceStatus.textContent=r.status.charAt(0).toUpperCase()+r.status.slice(1);
-  viewServiceDescription.textContent=r.description||'—';
-  serviceViewModal.show();
- }));
- const reset=()=>{form.reset();serviceId.value='';unitName.value='QTY';standardRate.value='0.00';taxPercent.value='0.00';serviceStatus.value='active'};
- newServiceBtn.addEventListener('click',reset);
- document.querySelectorAll('[data-edit-service]').forEach(btn=>btn.addEventListener('click',()=>{const r=JSON.parse(btn.dataset.record);serviceId.value=r.id;serviceCategoryId.value=r.service_category_id;serviceCode.value=r.service_code;unitName.value=r.unit_name;serviceName.value=r.service_name;serviceDescription.value=r.description||'';standardRate.value=r.standard_rate;taxPercent.value=r.tax_percent;hsnSacCode.value=r.hsn_sac_code||'';serviceStatus.value=r.status;modal.show()}));
+document.addEventListener('DOMContentLoaded', () => {
+ const form = document.getElementById('serviceForm');
+ const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('serviceModal'));
+ const serviceViewModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('serviceViewModal'));
+
+ const viewServiceCode = document.getElementById('viewServiceCode');
+ const viewServiceName = document.getElementById('viewServiceName');
+ const viewServiceCategory = document.getElementById('viewServiceCategory');
+ const viewServiceRate = document.getElementById('viewServiceRate');
+ const viewServiceTax = document.getElementById('viewServiceTax');
+ const viewServiceHsn = document.getElementById('viewServiceHsn');
+ const viewServiceStatus = document.getElementById('viewServiceStatus');
+ const viewServiceDescription = document.getElementById('viewServiceDescription');
+
+ const serviceId = document.getElementById('serviceId');
+ const serviceCategoryId = document.getElementById('serviceCategoryId');
+ const serviceCode = document.getElementById('serviceCode');
+ const unitName = document.getElementById('unitName');
+ const serviceName = document.getElementById('serviceName');
+ const serviceDescription = document.getElementById('serviceDescription');
+ const standardRate = document.getElementById('standardRate');
+ const taxPercent = document.getElementById('taxPercent');
+ const hsnSacCode = document.getElementById('hsnSacCode');
+ const serviceStatus = document.getElementById('serviceStatus');
+ const newServiceBtn = document.getElementById('newServiceBtn');
+ const serviceSearch = document.getElementById('serviceSearch');
+ const serviceCategoryFilter = document.getElementById('serviceCategoryFilter');
+
+ document.querySelectorAll('[data-view-service]').forEach(button => {
+  button.addEventListener('click', () => {
+   try {
+    const service = JSON.parse(button.dataset.record || '{}');
+    viewServiceCode.textContent = service.service_code || '—';
+    viewServiceName.textContent = service.service_name || '—';
+    viewServiceCategory.textContent = service.category_name || '—';
+    viewServiceRate.textContent = '₹' + Number(service.standard_rate || 0).toFixed(2);
+    viewServiceTax.textContent = Number(service.tax_percent || 0).toFixed(2) + '%';
+    viewServiceHsn.textContent = service.hsn_sac_code || '—';
+    viewServiceStatus.textContent = service.status ? service.status.charAt(0).toUpperCase() + service.status.slice(1) : '—';
+    viewServiceDescription.textContent = service.description || '—';
+    serviceViewModal.show();
+   } catch (error) {
+    console.error('Unable to open service details:', error);
+    AppToast.show('error', 'Unable to load service details.');
+   }
+  });
+ });
+ const reset=()=>{form.reset();serviceId.value='';unitName.value='SERVICE';standardRate.value='0.00';taxPercent.value='0.00';serviceStatus.value='active'};
+ if (newServiceBtn) { newServiceBtn.addEventListener('click', reset); }
+ document.querySelectorAll('[data-edit-service]').forEach(btn=>btn.addEventListener('click',()=>{const r=JSON.parse(btn.dataset.record);serviceId.value=r.id;serviceCategoryId.value=r.service_category_id;serviceCode.value=r.service_code;unitName.value='SERVICE';serviceName.value=r.service_name;serviceDescription.value=r.description||'';standardRate.value=r.standard_rate;taxPercent.value=r.tax_percent;hsnSacCode.value=r.hsn_sac_code||'';serviceStatus.value=r.status;modal.show()}));
  async function send(fd){try{const res=await fetch('<?= e(app_url('api/services.php')) ?>',{method:'POST',body:fd,credentials:'same-origin'});const data=await res.json();AppToast.show(data.success?'success':'error',data.message);if(data.success)setTimeout(()=>location.reload(),350)}catch(e){AppToast.show('error','Unable to process service request.')}}
  form.addEventListener('submit',e=>{e.preventDefault();send(new FormData(form))});
  document.querySelectorAll('[data-toggle-service]').forEach(btn=>btn.addEventListener('click',()=>{const fd=new FormData();fd.append('csrf_token',window.APP_CSRF);fd.append('action','toggle');fd.append('id',btn.dataset.id);send(fd)}));
