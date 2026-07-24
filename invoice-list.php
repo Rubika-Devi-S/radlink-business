@@ -281,7 +281,7 @@ include __DIR__ . '/includes/layout-start.php';
 
 .invoice-table {
     width: 100%;
-    min-width: 1500px;
+    min-width: 1260px;
     table-layout: auto;
     border-collapse: separate;
     border-spacing: 0;
@@ -321,58 +321,46 @@ include __DIR__ . '/includes/layout-start.php';
 
 .invoice-table th:nth-child(1),
 .invoice-table td:nth-child(1) {
-    min-width: 120px
+    min-width: 120px;
 }
 
 .invoice-table th:nth-child(2),
 .invoice-table td:nth-child(2) {
-    min-width: 205px
+    min-width: 230px;
+    white-space: normal;
 }
 
 .invoice-table th:nth-child(3),
-.invoice-table td:nth-child(3) {
-    min-width: 145px
-}
-
+.invoice-table td:nth-child(3),
 .invoice-table th:nth-child(4),
 .invoice-table td:nth-child(4) {
-    min-width: 115px
+    min-width: 115px;
 }
 
 .invoice-table th:nth-child(5),
 .invoice-table td:nth-child(5) {
-    min-width: 115px
+    min-width: 85px;
 }
 
 .invoice-table th:nth-child(6),
-.invoice-table td:nth-child(6) {
-    min-width: 105px
-}
-
+.invoice-table td:nth-child(6),
 .invoice-table th:nth-child(7),
-.invoice-table td:nth-child(7) {
-    min-width: 85px
+.invoice-table td:nth-child(7),
+.invoice-table th:nth-child(8),
+.invoice-table td:nth-child(8) {
+    min-width: 105px;
 }
 
-.invoice-table th:nth-child(8),
-.invoice-table td:nth-child(8),
 .invoice-table th:nth-child(9),
 .invoice-table td:nth-child(9),
 .invoice-table th:nth-child(10),
 .invoice-table td:nth-child(10) {
-    min-width: 105px
+    min-width: 125px;
 }
 
 .invoice-table th:nth-child(11),
-.invoice-table td:nth-child(11),
-.invoice-table th:nth-child(12),
-.invoice-table td:nth-child(12) {
-    min-width: 125px
-}
-
-.invoice-table th:nth-child(13),
-.invoice-table td:nth-child(13) {
-    min-width: 100px
+.invoice-table td:nth-child(11) {
+    min-width: 145px;
 }
 
 .invoice-table .col-invoice {
@@ -381,14 +369,6 @@ include __DIR__ . '/includes/layout-start.php';
 
 .invoice-table .col-hospital {
     width: 205px
-}
-
-.invoice-table .col-patient {
-    width: 145px
-}
-
-.invoice-table .col-cases {
-    width: 115px
 }
 
 .invoice-table .col-date {
@@ -408,7 +388,7 @@ include __DIR__ . '/includes/layout-start.php';
 }
 
 .invoice-table .col-actions {
-    width: 100px
+    width: 145px
 }
 
 .invoice-number {
@@ -571,6 +551,93 @@ include __DIR__ . '/includes/layout-start.php';
     width: 16px;
     height: 16px;
 }
+
+.action-whatsapp {
+    border-color: #25d366 !important;
+    color: #128c4a !important;
+}
+
+.action-whatsapp:hover {
+    background: #25d366 !important;
+    color: #fff !important;
+}
+
+/* Compact invoice list layout */
+.invoice-filter-grid {
+    gap: 8px !important;
+}
+
+.invoice-filter-row-2 {
+    gap: 8px !important;
+    margin-top: 8px !important;
+}
+
+.invoice-stats {
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+}
+
+.invoice-stat {
+    padding: 10px 12px !important;
+    border-radius: 13px !important;
+}
+
+.invoice-stat small {
+    margin-bottom: 3px !important;
+    font-size: 11px;
+}
+
+.invoice-stat strong {
+    font-size: 17px !important;
+}
+
+.card-ui {
+    border-radius: 14px;
+}
+
+.invoice-filter-grid .form-label,
+.invoice-filter-row-2 .form-label {
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.invoice-filter-grid .form-control,
+.invoice-filter-grid .form-select,
+.invoice-filter-grid .input-group-text,
+.invoice-filter-row-2 .form-control,
+.invoice-filter-row-2 .form-select,
+.invoice-filter-row-2 .btn {
+    min-height: 38px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.invoice-live-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.invoice-live-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
+@media (max-width: 767.98px) {
+    .invoice-stat {
+        padding: 9px 11px !important;
+    }
+
+    .invoice-stats {
+        gap: 7px !important;
+    }
+}
+
 </style>
 
 <div class="page-head">
@@ -679,6 +746,7 @@ include __DIR__ . '/includes/layout-start.php';
             <button class="btn btn-brand" type="submit"><i data-lucide="list-filter"></i> Apply Filters</button>
             <a class="btn btn-light" href="<?= e(app_url('invoice-list.php')) ?>"><i data-lucide="rotate-ccw"></i>
                 Reset</a>
+            <span class="invoice-live-status">Live filtering enabled</span>
         </div>
     </form>
 </section>
@@ -704,8 +772,6 @@ include __DIR__ . '/includes/layout-start.php';
             <colgroup>
                 <col class="col-invoice">
                 <col class="col-hospital">
-                <col class="col-patient">
-                <col class="col-cases">
                 <col class="col-date">
                 <col class="col-date">
                 <col class="col-fy">
@@ -720,8 +786,6 @@ include __DIR__ . '/includes/layout-start.php';
                 <tr>
                     <th>Invoice</th>
                     <th>Hospital / Client</th>
-                    <th>Patient / Reference</th>
-                    <th>Patients / Cases</th>
                     <th>Invoice Date</th>
                     <th>Due Date</th>
                     <th>FY</th>
@@ -736,7 +800,7 @@ include __DIR__ . '/includes/layout-start.php';
             <tbody>
                 <?php if (!$invoices): ?>
                 <tr>
-                    <td colspan="13" class="text-center text-muted py-5"><i data-lucide="receipt-text"></i>
+                    <td colspan="11" class="text-center text-muted py-5"><i data-lucide="receipt-text"></i>
                         <div class="fw-bold mt-2">No invoices found</div><small>Change the filters or create a new
                             invoice.</small>
                     </td>
@@ -768,10 +832,6 @@ $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status']
                         <div class="invoice-meta"><?= e($invoice['client_code']) ?> ·
                             <?= e($invoice['client_type_name']) ?></div>
                     </td>
-                    <td><?= e($invoice['patient_name'] ?: '—') ?><?php if ($invoice['patient_reference_no']): ?><small
-                            class="d-block text-muted"><?= e($invoice['patient_reference_no']) ?></small><?php endif; ?>
-                    </td>
-                    <td><?= number_format((float)($invoice['patient_count'] ?? 0), 0) ?></td>
                     <td><?= e(date('d-m-Y', strtotime($invoice['invoice_date']))) ?></td>
                     <td><?php if ($invoice['due_date']): ?><span
                             class="<?= $isOverdue ? 'text-danger fw-bold' : '' ?>"><?= e(date('d-m-Y', strtotime($invoice['due_date']))) ?></span><?php else: ?>—<?php endif; ?>
@@ -794,9 +854,23 @@ $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status']
                                 href="<?= e(app_url('invoice-form.php?id=' . (int)$invoice['id'])) ?>"><i
                                     data-lucide="pencil"></i></a>
                             <?php endif; ?>
-                            <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print" target="_blank"
-                                href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'])) ?>"><i
+                            <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print"
+                                href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'] . '&fallback=1')) ?>"><i
                                     data-lucide="printer"></i></a>
+                            <?php
+                            $waMobile = preg_replace('/\D+/', '', (string)($invoice['bill_to_mobile'] ?? ''));
+                            if ($waMobile !== '' && strlen($waMobile) === 10) { $waMobile = '91' . $waMobile; }
+                            $waText = rawurlencode('Dear ' . $invoice['bill_to_name'] . ",\nPlease find Invoice " . $invoice['invoice_number'] . ' for Rs. ' . number_format((float)$invoice['grand_total'], 2) . ".\nInvoice: " . app_url('invoice-print.php?id=' . (int)$invoice['id']));
+                            ?>
+                            <?php if ($waMobile !== ''): ?>
+                            <a class="btn btn-sm action-icon-btn action-whatsapp" title="Send on WhatsApp"
+                                target="_blank" rel="noopener"
+                                href="<?= e('https://wa.me/' . $waMobile . '?text=' . $waText) ?>"><svg
+                                    viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="whatsapp-svg">
+                                    <path fill="currentColor"
+                                        d="M12.04 2a9.84 9.84 0 0 0-8.45 14.87L2 22l5.27-1.55A9.95 9.95 0 1 0 12.04 2Zm0 17.96a8.02 8.02 0 0 1-4.09-1.12l-.29-.17-3.13.92.94-3.04-.19-.31a7.93 7.93 0 1 1 6.76 3.72Zm4.39-5.95c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.41-1.33-1.65-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.47-.39-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.39 1.37.5.58.18 1.1.16 1.51.1.46-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" />
+                                </svg></a>
+                            <?php endif; ?>
                         </div>
                     </td>
                 </tr>
@@ -835,9 +909,6 @@ $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status']
                 <div><small>Total</small><strong>₹<?= number_format((float)$invoice['grand_total'], 2) ?></strong></div>
                 <div><small>Balance</small><strong>₹<?= number_format((float)$invoice['balance_amount'], 2) ?></strong>
                 </div>
-                <div><small>Patients /
-                        Cases</small><strong><?= number_format((float)($invoice['patient_count'] ?? 0), 0) ?></strong>
-                </div>
                 <div><small>Payment</small><span
                         class="invoice-pill <?= e($paymentClass) ?>"><?= e($paymentLabel) ?></span></div>
             </div>
@@ -848,9 +919,22 @@ $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status']
                     class="btn btn-sm btn-outline-primary action-icon-btn" title="Edit"
                     href="<?= e(app_url('invoice-form.php?id=' . (int)$invoice['id'])) ?>"><i
                         data-lucide="pencil"></i></a><?php endif; ?>
-                <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print" target="_blank"
-                    href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'])) ?>"><i
+                <a class="btn btn-sm btn-outline-secondary action-icon-btn" title="Print"
+                    href="<?= e(app_url('invoice-print-viewer.php?id=' . (int)$invoice['id'] . '&fallback=1')) ?>"><i
                         data-lucide="printer"></i></a>
+                <?php
+                $waMobile = preg_replace('/\D+/', '', (string)($invoice['bill_to_mobile'] ?? ''));
+                if ($waMobile !== '' && strlen($waMobile) === 10) { $waMobile = '91' . $waMobile; }
+                $waText = rawurlencode('Dear ' . $invoice['bill_to_name'] . ",\nPlease find Invoice " . $invoice['invoice_number'] . ' for Rs. ' . number_format((float)$invoice['grand_total'], 2) . ".\nInvoice: " . app_url('invoice-print.php?id=' . (int)$invoice['id']));
+                ?>
+                <?php if ($waMobile !== ''): ?>
+                <a class="btn btn-sm action-icon-btn action-whatsapp" title="Send on WhatsApp" target="_blank"
+                    rel="noopener" href="<?= e('https://wa.me/' . $waMobile . '?text=' . $waText) ?>"><svg
+                        viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="whatsapp-svg">
+                        <path fill="currentColor"
+                            d="M12.04 2a9.84 9.84 0 0 0-8.45 14.87L2 22l5.27-1.55A9.95 9.95 0 1 0 12.04 2Zm0 17.96a8.02 8.02 0 0 1-4.09-1.12l-.29-.17-3.13.92.94-3.04-.19-.31a7.93 7.93 0 1 1 6.76 3.72Zm4.39-5.95c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.41-1.33-1.65-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.47-.39-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.39 1.37.5.58.18 1.1.16 1.51.1.46-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" />
+                    </svg></a>
+                <?php endif; ?>
             </div>
         </article>
         <?php endforeach; ?>
@@ -881,10 +965,42 @@ $paymentClass = $isOverdue ? 'pay-overdue' : 'pay-' . $invoice['payment_status']
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form[method="get"]');
     const hospital = document.getElementById('hospitalFilter');
     const client = document.getElementById('clientFilter');
+    const searchInput = form?.querySelector('input[name="q"]');
 
-    hospital.addEventListener('change', () => {
+    if (!form) {
+        return;
+    }
+
+    let submitTimer = 0;
+    let submitting = false;
+
+    function submitLive(delay = 0) {
+        window.clearTimeout(submitTimer);
+
+        submitTimer = window.setTimeout(() => {
+            if (submitting) {
+                return;
+            }
+
+            submitting = true;
+
+            const pageField = form.querySelector('[name="page"]');
+            if (pageField) {
+                pageField.value = '1';
+            }
+
+            form.requestSubmit();
+        }, delay);
+    }
+
+    function filterClients() {
+        if (!hospital || !client) {
+            return;
+        }
+
         const hospitalId = hospital.value;
 
         Array.from(client.options).forEach(option => {
@@ -893,17 +1009,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            option.hidden = hospitalId !== '0' &&
+            option.hidden =
+                hospitalId !== '0' &&
                 option.dataset.hospitalId !== hospitalId;
         });
 
         const selected = client.options[client.selectedIndex];
+
         if (selected && selected.hidden) {
             client.value = '0';
         }
+    }
+
+    hospital?.addEventListener('change', () => {
+        filterClients();
+        submitLive(0);
     });
 
-    hospital.dispatchEvent(new Event('change'));
+    client?.addEventListener('change', () => submitLive(0));
+
+    form.querySelectorAll(
+        'select[name]:not(#hospitalFilter):not(#clientFilter), input[type="date"][name]'
+    ).forEach(field => {
+        field.addEventListener('change', () => submitLive(0));
+    });
+
+    searchInput?.addEventListener('input', () => {
+        submitLive(450);
+    });
+
+    form.addEventListener('submit', () => {
+        submitting = true;
+    });
+
+    filterClients();
 
     if (window.lucide) {
         lucide.createIcons();

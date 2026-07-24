@@ -40,6 +40,11 @@ $stmt = $pdo->prepare(
 $stmt->execute([$id, $currentBusinessId]);
 $items = $stmt->fetchAll();
 
+$pc=$pdo->prepare("SELECT * FROM invoice_item_column_settings WHERE business_id=? AND status='active' AND is_visible=1 AND show_in_print=1 ORDER BY sort_order,id");
+$pc->execute([$currentBusinessId]);
+$printColumns=$pc->fetchAll();
+if(!$printColumns){$printColumns=[['column_key'=>'service','column_label'=>'Service Name','column_type'=>'system'],['column_key'=>'final_amount','column_label'=>'Total Amount','column_type'=>'system']];}
+
 $stmt = $pdo->prepare(
     "SELECT *
      FROM business_bank_accounts
@@ -120,6 +125,132 @@ final class RadLinkInvoicePdf extends FPDF
             0,
             'C'
         );
+    }
+
+    public function wrappedLineCount(float $width, string $text): int
+    {
+        $cw = $this->CurrentFont['cw'];
+        $availableWidth = max(1.0, ($width - 2 * $this->cMargin) * 1000 / $this->FontSize);
+        $cleanText = str_replace("\r", '', $text);
+        $length = strlen($cleanText);
+
+        if ($length > 0 && $cleanText[$length - 1] === "\n") {
+            $length--;
+        }
+
+        $separator = -1;
+        $lineStart = 0;
+        $cursor = 0;
+        $lineWidth = 0;
+        $lineCount = 1;
+
+        while ($cursor < $length) {
+            $character = $cleanText[$cursor];
+
+            if ($character === "\n") {
+                $cursor++;
+                $separator = -1;
+                $lineStart = $cursor;
+                $lineWidth = 0;
+                $lineCount++;
+                continue;
+            }
+
+            if ($character === ' ') {
+                $separator = $cursor;
+            }
+
+            $lineWidth += $cw[$character] ?? 0;
+
+            if ($lineWidth > $availableWidth) {
+                if ($separator === -1) {
+                    if ($cursor === $lineStart) {
+                        $cursor++;
+                    }
+                } else {
+                    $cursor = $separator + 1;
+                }
+
+                $separator = -1;
+                $lineStart = $cursor;
+                $lineWidth = 0;
+                $lineCount++;
+            } else {
+                $cursor++;
+            }
+        }
+
+        return max(1, $lineCount);
+    }
+
+    public function wrappedTableRow(
+        array $values,
+        array $widths,
+        array $alignments,
+        float $lineHeight,
+        bool $fill = false,
+        string $border = 'B',
+        bool $verticalCenter = false
+    ): float {
+        $lineCounts = [];
+
+        foreach ($values as $index => $value) {
+            $lineCounts[] = $this->wrappedLineCount(
+                (float)$widths[$index],
+                (string)$value
+            );
+        }
+
+        $rowHeight = max($lineHeight, max($lineCounts) * $lineHeight);
+        $startX = $this->GetX();
+        $startY = $this->GetY();
+
+        foreach ($values as $index => $value) {
+            $width = (float)$widths[$index];
+            $alignment = (string)($alignments[$index] ?? 'L');
+
+            if ($fill) {
+                $this->Rect($startX, $startY, $width, $rowHeight, 'F');
+            }
+
+            if ($border !== '') {
+                if (str_contains($border, 'B')) {
+                    $this->Line($startX, $startY + $rowHeight, $startX + $width, $startY + $rowHeight);
+                }
+                if (str_contains($border, 'T')) {
+                    $this->Line($startX, $startY, $startX + $width, $startY);
+                }
+                if (str_contains($border, 'L')) {
+                    $this->Line($startX, $startY, $startX, $startY + $rowHeight);
+                }
+                if (str_contains($border, 'R')) {
+                    $this->Line($startX + $width, $startY, $startX + $width, $startY + $rowHeight);
+                }
+            }
+
+            $textHeight = ((int)$lineCounts[$index]) * $lineHeight;
+            $textY = $startY + 0.7;
+
+            if ($verticalCenter) {
+                $textY = $startY + max(0.5, ($rowHeight - $textHeight) / 2);
+            }
+
+            $this->SetXY($startX, $textY);
+            $this->MultiCell(
+                $width,
+                $lineHeight,
+                (string)$value,
+                0,
+                $alignment,
+                false
+            );
+
+            $startX += $width;
+        }
+
+        $this->SetXY($this->lMargin, $startY + $rowHeight);
+
+        return $rowHeight;
     }
 }
 
@@ -402,7 +533,33 @@ if ($showQr) {
         if ($upiId === '') {
             $qrError = 'Default bank account UPI ID is empty.';
         } elseif (!is_file($qrLibrary)) {
-            $qrError = 'PHP QR Code library was not found.';
+            $qrDirectory = __DIR__ . '/assets/uploads/qr';
+            if (!is_dir($qrDirectory) && !mkdir($qrDirectory, 0755, true)) {
+                $qrError = 'Unable to create QR directory.';
+            } else {
+                $amountText = number_format(max(0, $qrAmount), 2, '.', '');
+                $upiUrl = 'upi://pay?pa=' . rawurlencode($upiId)
+                    . '&pn=' . rawurlencode((string)$invoice['business_name'])
+                    . '&am=' . rawurlencode($amountText)
+                    . '&cu=INR&tn=' . rawurlencode((string)$invoice['invoice_number']);
+                $resolvedQrPath = $qrDirectory . '/invoice_' . $id . '_' . substr(hash('sha256',$upiUrl),0,18) . '.png';
+                $remoteUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' . rawurlencode($upiUrl);
+                $imageData = false;
+                if (function_exists('curl_init')) {
+                    $ch = curl_init($remoteUrl);
+                    curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>15,CURLOPT_FOLLOWLOCATION=>true]);
+                    $imageData = curl_exec($ch);
+                    curl_close($ch);
+                } elseif (filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+                    $imageData = @file_get_contents($remoteUrl);
+                }
+                if ($imageData === false || strlen($imageData) < 100) {
+                    $qrError = 'QR library missing and online QR fallback failed. Install the complete lib/phpqrcode folder.';
+                    $resolvedQrPath = '';
+                } else {
+                    file_put_contents($resolvedQrPath,$imageData);
+                }
+            }
         } else {
             require_once $qrLibrary;
 
@@ -723,103 +880,262 @@ $tableTop = max(89.0, $billCursorY + 4.0);
  * Fixed column widths. The total is exactly 174 mm, matching the printable
  * content width from X = 18 mm to X = 192 mm.
  */
-$tableWidths = [12.0, 68.0, 26.0, 24.0, 22.0, 22.0];
-$tableHeaders = [
-    'S.NO.',
-    'SERVICES',
-    'SERVICE RATE',
-    'DISCOUNT',
-    'VALUE',
-    'AMOUNT',
-];
-$tableAlignments = ['C', 'L', 'C', 'C', 'C', 'C'];
+$printDefinitions = [];
+
+foreach ($printColumns as $column) {
+    $key = (string)$column['column_key'];
+
+    $weight = match ($key) {
+        'service' => 3.4,
+        'final_amount', 'gross_amount' => 1.45,
+        'rate', 'discount_value' => 1.25,
+        'quantity' => 0.75,
+        'discount_type' => 1.15,
+        default => 1.25,
+    };
+
+    $alignment = match ($key) {
+        'service' => 'L',
+        'quantity', 'discount_type' => 'C',
+        'rate', 'gross_amount', 'discount_value', 'final_amount' => 'R',
+        default => 'L',
+    };
+
+    $printDefinitions[] = [
+        'key' => $key,
+        'label' => (string)$column['column_label'],
+        'type' => (string)$column['column_type'],
+        'weight' => $weight,
+        'align' => $alignment,
+    ];
+}
+
+$totalWeight = max(1.0, array_sum(array_column($printDefinitions, 'weight')));
+$tableWidths = [12.0];
+
+foreach ($printDefinitions as $definition) {
+    $tableWidths[] = 162.0 * ($definition['weight'] / $totalWeight);
+}
+
+/*
+ * Responsive width correction:
+ * - service keeps useful space
+ * - narrow numeric fields do not consume excessive width
+ * - all columns always remain inside the 174 mm printable area
+ */
+$minimumWidths = [12.0];
+
+foreach ($printDefinitions as $definition) {
+    $minimumWidths[] = match ((string)$definition['key']) {
+        'service' => 34.0,
+        'quantity' => 12.0,
+        'rate', 'discount_value' => 19.0,
+        'discount_type' => 18.0,
+        'gross_amount', 'final_amount' => 22.0,
+        default => 17.0,
+    };
+}
+
+$minimumTotal = array_sum($minimumWidths);
+
+if ($minimumTotal <= $contentWidth) {
+    foreach ($tableWidths as $index => $width) {
+        $tableWidths[$index] = max($width, $minimumWidths[$index]);
+    }
+
+    $widthTotal = array_sum($tableWidths);
+
+    if ($widthTotal > $contentWidth) {
+        $excess = $widthTotal - $contentWidth;
+        $flexibleIndexes = array_keys($tableWidths);
+
+        foreach ($flexibleIndexes as $index) {
+            if ($excess <= 0) {
+                break;
+            }
+
+            $reducible = max(
+                0.0,
+                $tableWidths[$index] - $minimumWidths[$index]
+            );
+
+            $reduce = min($reducible, $excess);
+            $tableWidths[$index] -= $reduce;
+            $excess -= $reduce;
+        }
+    }
+} else {
+    $scale = $contentWidth / $minimumTotal;
+
+    foreach ($minimumWidths as $index => $minimumWidth) {
+        $tableWidths[$index] = $minimumWidth * $scale;
+    }
+}
+
+/* Protect against floating-point drift. */
+$tableWidths[count($tableWidths) - 1] +=
+    $contentWidth - array_sum($tableWidths);
+
+$tableHeaders = array_merge(
+    ['S.NO.'],
+    array_map(
+        static fn(array $definition): string =>
+            invoice_pdf_text(strtoupper((string)$definition['label'])),
+        $printDefinitions
+    )
+);
+
+$bodyAlignments = array_merge(
+    ['C'],
+    array_column($printDefinitions, 'align')
+);
+
+$headerAlignments = $bodyAlignments;
+
+$visibleColumnCount = count($tableHeaders);
+
+$headerFontSize = match (true) {
+    $visibleColumnCount >= 10 => 4.8,
+    $visibleColumnCount >= 8  => 5.3,
+    $visibleColumnCount >= 6  => 5.9,
+    default                   => 6.8,
+};
+
+$bodyFontSize = match (true) {
+    $visibleColumnCount >= 10 => 4.7,
+    $visibleColumnCount >= 8  => 5.2,
+    $visibleColumnCount >= 6  => 5.8,
+    default                   => 6.8,
+};
+
+$headerLineHeight = match (true) {
+    $visibleColumnCount >= 10 => 2.9,
+    $visibleColumnCount >= 8  => 3.1,
+    default                   => 3.6,
+};
+
+$bodyLineHeight = match (true) {
+    $visibleColumnCount >= 10 => 2.85,
+    $visibleColumnCount >= 8  => 3.0,
+    default                   => 3.5,
+};
 
 $pdf->SetXY($pageLeft, $tableTop);
 $pdf->SetFillColor(...$themeColour);
 $pdf->SetDrawColor(220, 220, 220);
 $pdf->SetLineWidth(0.18);
-$pdf->SetFont('Helvetica', 'B', 7.2);
+$pdf->SetFont('Helvetica', 'B', $headerFontSize);
 
-foreach ($tableHeaders as $index => $header) {
-    $pdf->Cell(
-        $tableWidths[$index],
-        8.4,
-        invoice_pdf_text($header),
-        'B',
-        0,
-        $tableAlignments[$index],
-        true
-    );
-}
-
-$pdf->Ln(8.4);
-
-$itemCount = count($items);
-$subtotalTop = 157.0;
-$availableItemHeight = max(
-    25.0,
-    $subtotalTop - ($tableTop + 8.4) - 1.5
+$headerHeight = $pdf->wrappedTableRow(
+    $tableHeaders,
+    $tableWidths,
+    $headerAlignments,
+    $headerLineHeight,
+    true,
+    'B',
+    true
 );
 
-$rowHeight = $itemCount > 0
-    ? min(
-        6.4,
-        max(
-            3.4,
-            $availableItemHeight / $itemCount
-        )
-    )
-    : 6.4;
-
-$itemFontSize = $rowHeight < 4.0
-    ? 5.9
-    : (
-        $rowHeight < 5.0
-            ? 6.5
-            : 7.2
-    );
-
-$pdf->SetFont('Helvetica', '', $itemFontSize);
+$pdf->SetFont('Helvetica', '', $bodyFontSize);
 $pdf->SetDrawColor(234, 234, 234);
 
+$currentTableBottom = $tableTop + $headerHeight;
+
 foreach ($items as $index => $item) {
-    $pdf->SetX($pageLeft);
+    $customFields = json_decode(
+        (string)($item['custom_fields_json'] ?? '{}'),
+        true
+    );
 
-    $discountType = (string)($item['discount_type'] ?? 'none');
-    $discountValue = (float)($item['discount_value'] ?? 0);
-    $discountAmount = (float)($item['discount_amount'] ?? 0);
-
-    $discountDisplayText = match ($discountType) {
-        'percentage' => rtrim(
-            rtrim(number_format($discountValue, 2, '.', ''), '0'),
-            '.'
-        ) . '%',
-        'amount' => number_format($discountAmount, 2),
-        default => '-',
-    };
-
-    $rowValues = [
-        (string)($index + 1),
-        invoice_pdf_text((string)$item['service_name_snapshot']),
-        number_format((float)$item['applied_rate'], 2),
-        invoice_pdf_text($discountDisplayText),
-        number_format($discountAmount, 2),
-        number_format((float)$item['line_total'], 2),
-    ];
-
-    $rowAlignments = ['C', 'L', 'C', 'C', 'C', 'C'];
-
-    foreach ($rowValues as $columnIndex => $value) {
-        $pdf->Cell(
-            $tableWidths[$columnIndex],
-            $rowHeight,
-            $value,
-            'B',
-            $columnIndex === count($rowValues) - 1 ? 1 : 0,
-            $rowAlignments[$columnIndex]
-        );
+    if (!is_array($customFields)) {
+        $customFields = [];
     }
+
+    $values = [(string)($index + 1)];
+    $rowAlignments = ['C'];
+
+    foreach ($printDefinitions as $definition) {
+        $key = (string)$definition['key'];
+        $value = '';
+
+        if ($key === 'service') {
+            $value = (string)$item['service_name_snapshot'];
+        } elseif ($key === 'quantity') {
+            $value = invoice_compact_quantity(
+                (float)($item['quantity'] ?? 1)
+            );
+        } elseif ($key === 'rate') {
+            $value = 'Rs. ' . number_format(
+                (float)($item['applied_rate'] ?? 0),
+                2
+            );
+        } elseif ($key === 'gross_amount') {
+            $value = 'Rs. ' . number_format(
+                (float)($item['quantity'] ?? 1)
+                    * (float)($item['applied_rate'] ?? 0),
+                2
+            );
+        } elseif ($key === 'discount_type') {
+            $value = ucwords(
+                str_replace(
+                    '_',
+                    ' ',
+                    (string)($item['discount_type'] ?? 'none')
+                )
+            );
+        } elseif ($key === 'discount_value') {
+            $value = (string)($item['discount_type'] ?? 'none') === 'percentage'
+                ? number_format(
+                    (float)($item['discount_value'] ?? 0),
+                    2
+                ) . '%'
+                : 'Rs. ' . number_format(
+                    (float)($item['discount_amount'] ?? 0),
+                    2
+                );
+        } elseif ($key === 'final_amount') {
+            $value = 'Rs. ' . number_format(
+                (float)($item['line_total'] ?? 0),
+                2
+            );
+        } else {
+            $customValue = $customFields[$key] ?? '';
+
+            if (is_bool($customValue)) {
+                $value = $customValue ? 'Yes' : 'No';
+            } elseif (is_array($customValue)) {
+                $value = implode(
+                    ', ',
+                    array_map('strval', $customValue)
+                );
+            } else {
+                $value = (string)$customValue;
+            }
+        }
+
+        $values[] = invoice_pdf_text($value);
+        $rowAlignments[] = (string)$definition['align'];
+    }
+
+    $pdf->SetX($pageLeft);
+    $rowHeight = $pdf->wrappedTableRow(
+        $values,
+        $tableWidths,
+        $rowAlignments,
+        $bodyLineHeight,
+        false,
+        'B',
+        true
+    );
+
+    $currentTableBottom += $rowHeight;
 }
+
+/*
+ * Keep the subtotal below the actual wrapped rows. The original fixed
+ * position is retained when the table is short.
+ */
+$subtotalTop = max(157.0, $currentTableBottom + 4.0);
 
 /*
 |--------------------------------------------------------------------------
@@ -832,7 +1148,7 @@ $pdf->SetDrawColor(220, 220, 220);
 $pdf->SetFont('Helvetica', 'B', 8.1);
 
 $pdf->Cell(
-    array_sum(array_slice($tableWidths, 0, 5)),
+    array_sum(array_slice($tableWidths, 0, -1)),
     8.5,
     'SUBTOTAL',
     'T',
@@ -841,7 +1157,7 @@ $pdf->Cell(
     true
 );
 $pdf->Cell(
-    $tableWidths[5],
+    $tableWidths[count($tableWidths) - 1],
     8.5,
     'Rs. ' . number_format((float)$invoice['subtotal'], 2),
     'T',
@@ -1061,9 +1377,24 @@ $pdf->Cell(
     'R'
 );
 
+$pdf->SetX($rightX);
+$pdf->SetFont('Helvetica', 'B', 7.5);
+$pdf->Cell(50, 6.7, 'Balance Amount', 0, 0);
+$pdf->Cell(
+    30,
+    6.7,
+    'Rs. ' . number_format(
+        (float)$invoice['balance_amount'],
+        2
+    ),
+    0,
+    1,
+    'R'
+);
+
 $pdf->SetXY(
     $rightX,
-    $footerTop + 22.0
+    $footerTop + 29.0
 );
 $pdf->SetFont('Helvetica', 'B', 7.5);
 $pdf->Cell(

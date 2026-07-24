@@ -453,8 +453,8 @@ if ($backendAction === 'save_invoice') {
          * The simplified service bill stores one service row without exposing
          * quantity to the user. The resolved service rate is the line amount.
          */
-        $patientCount = 1;
-        $gross = $rate;
+        $patientCount = max(1, $patientCount);
+        $gross = round($patientCount * $rate, 2);
 
         $discountAmount = match ($discountType) {
             'percentage' => $gross * $discountValue / 100,
@@ -485,6 +485,10 @@ if ($backendAction === 'save_invoice') {
             'billing_from' => $billingFrom,
             'billing_to' => $billingTo,
             'rate_basis' => $rateBasis,
+            'custom_fields_json' => json_encode(
+                is_array($item['custom_fields'] ?? null) ? $item['custom_fields'] : [],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ),
         ];
     }
 
@@ -775,10 +779,11 @@ if ($backendAction === 'save_invoice') {
                 tax_percent,
                 tax_amount,
                 line_total,
+                custom_fields_json,
                 sort_order
             )
             VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         foreach ($cleanItems as $item) {
@@ -794,7 +799,7 @@ if ($backendAction === 'save_invoice') {
                 $item['billing_from'],
                 $item['billing_to'],
                 $item['rate_basis'],
-                1,
+                $item['patient_count'],
                 (string)($service['unit_name'] ?? 'Service'),
                 $service['standard_rate'],
                 $item['rate'],
@@ -804,6 +809,7 @@ if ($backendAction === 'save_invoice') {
                 $item['tax_percent'],
                 $item['tax_amount'],
                 $item['line_total'],
+                $item['custom_fields_json'],
                 $item['sort_order'],
             ]);
         }

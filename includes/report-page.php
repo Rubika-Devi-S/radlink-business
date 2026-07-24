@@ -61,7 +61,29 @@ include __DIR__ . '/layout-start.php';
 .kpi-card strong{display:block;margin-top:5px;font-size:20px;overflow-wrap:anywhere}
 .report-table-card{padding:15px}
 .report-table th{white-space:nowrap}
-.report-table td{vertical-align:middle}
+.report-table td{vertical-align:middle;font-weight:400}
+.report-table td *,
+.report-table td strong,
+.report-table td .fw-bold{font-weight:400!important}
+.report-table th{font-weight:700}
+.report-table .money{font-weight:400}
+.report-table-card .dt-container .dt-search input,
+.report-table-card .dt-container .dt-length select{
+    min-height:38px;
+    border:1px solid var(--border-soft);
+    border-radius:10px;
+    padding:6px 10px;
+}
+.report-table-card .dt-container .dt-search{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.report-table-card .dt-container .dt-length{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
 .report-loading{padding:45px;text-align:center;color:var(--text-muted)}
 .money{text-align:right;white-space:nowrap;font-weight:700}
 .report-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
@@ -201,14 +223,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return new URLSearchParams(new FormData(form));
     }
 
+    let liveFilterTimer = 0;
+    let activeLoadController = null;
+
+    function scheduleLiveLoad(delay = 0) {
+        window.clearTimeout(liveFilterTimer);
+
+        liveFilterTimer = window.setTimeout(() => {
+            loadReport();
+        }, delay);
+    }
+
     async function loadReport() {
         if (dataTable) { dataTable.destroy(); dataTable = null; }
         tableWrap.innerHTML = '<div class="report-loading"><span class="spinner-border spinner-border-sm me-2"></span>Loading report...</div>';
         try {
+            if (activeLoadController) {
+                activeLoadController.abort();
+            }
+
+            activeLoadController = new AbortController();
+
             const url = new URL(<?= json_encode(app_url('api/reports.php'), JSON_UNESCAPED_SLASHES) ?>, window.location.origin);
             params().forEach((v,k)=>url.searchParams.set(k,v));
             url.searchParams.set('action','data');
-            const response = await fetch(url,{credentials:'same-origin',headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                signal: activeLoadController.signal
+            });
             const raw = await response.text();
             let result; try{result=JSON.parse(raw)}catch{throw new Error(raw.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()||'Invalid server response.')}
             if(!result.success) throw new Error(result.message);
@@ -218,12 +264,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = result.data.rows.map(row=>`<tr>${result.data.columns.map(c=>`<td class="${c.align==='right'?'money':c.align==='center'?'text-center':''}">${formatCell(row[c.key],c,row)}</td>`).join('')}</tr>`).join('');
             tableWrap.innerHTML = `<div class="table-responsive"><table class="table report-table align-middle w-100" id="reportTable"><thead><tr>${headers}</tr></thead><tbody>${rows || `<tr><td colspan="${result.data.columns.length}" class="text-center text-muted py-5">No records found.</td></tr>`}</tbody></table></div>`;
             if(result.data.rows.length){
-                dataTable = new DataTable('#reportTable',{pageLength:25,lengthMenu:[10,25,50,100],order:[],scrollX:true});
+                dataTable = new DataTable('#reportTable', {
+                    pageLength: 25,
+                    lengthMenu: [10, 25, 50, 100],
+                    order: [],
+                    scrollX: true,
+                    autoWidth: false,
+                    layout: {
+                        topStart: 'pageLength',
+                        topEnd: 'search',
+                        bottomStart: 'info',
+                        bottomEnd: 'paging'
+                    },
+                    language: {
+                        search: 'Search:',
+                        lengthMenu: '_MENU_ entries per page',
+                        emptyTable: 'No records found.'
+                    }
+                });
+
+                /*
+                 * DataTables already filters locally. This explicit binding
+                 * keeps the search functional even when a theme or another
+                 * script interferes with DataTables' delegated input event.
+                 */
+                const dataTableSearch = document.querySelector(
+                    '#reportTable_wrapper .dt-search input'
+                );
+
+                dataTableSearch?.addEventListener('input', event => {
+                    dataTable.search(event.target.value).draw();
+                });
             }
             bindDetails();
         } catch(error) {
-            kpis.innerHTML='';
-            tableWrap.innerHTML=`<div class="alert alert-danger mb-0">${escapeHtml(error.message)}</div>`;
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            kpis.innerHTML = '';
+            tableWrap.innerHTML =
+                `<div class="alert alert-danger mb-0">${escapeHtml(error.message)}</div>`;
         }
     }
 
@@ -258,18 +339,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
     }
 
-    form.addEventListener('submit',e=>{e.preventDefault();loadReport()});
-    document.getElementById('excelExport').addEventListener('click',()=>{
-        const url=new URL(<?= json_encode(app_url('api/reports.php'), JSON_UNESCAPED_SLASHES) ?>,window.location.origin);
-        params().forEach((v,k)=>url.searchParams.set(k,v));
-        url.searchParams.set('action','export');
-        window.location.href=url.toString();
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        scheduleLiveLoad(0);
     });
-    document.getElementById('resetReport').addEventListener('click',()=>{form.reset();loadReport()});
-    document.getElementById('financialYearFilter').addEventListener('change',e=>{
-        const option=e.target.options[e.target.selectedIndex];
-        if(option?.dataset.start){form.elements.date_from.value=option.dataset.start;form.elements.date_to.value=option.dataset.end}
+
+    form.querySelectorAll(
+        'select[name]:not(#financialYearFilter), input[type="date"][name]'
+    ).forEach(control => {
+        control.addEventListener('change', () => scheduleLiveLoad(0));
     });
+
+    document.getElementById('excelExport').addEventListener('click', () => {
+        const url = new URL(
+            <?= json_encode(app_url('api/reports.php'), JSON_UNESCAPED_SLASHES) ?>,
+            window.location.origin
+        );
+
+        params().forEach((value, key) => url.searchParams.set(key, value));
+        url.searchParams.set('action', 'export');
+        window.location.href = url.toString();
+    });
+
+    document.getElementById('resetReport').addEventListener('click', () => {
+        form.reset();
+        scheduleLiveLoad(0);
+    });
+
+    document.getElementById('financialYearFilter').addEventListener(
+        'change',
+        event => {
+            const option =
+                event.target.options[event.target.selectedIndex];
+
+            if (option?.dataset.start) {
+                form.elements.date_from.value = option.dataset.start;
+                form.elements.date_to.value = option.dataset.end;
+            }
+
+            scheduleLiveLoad(0);
+        }
+    );
 
     loadReport();
     if(window.lucide)lucide.createIcons();

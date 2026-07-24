@@ -35,9 +35,9 @@ include __DIR__ . '/includes/layout-start.php';
 <style>
 .module-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .module-search{max-width:340px}
-.module-stat{padding:16px;height:100%}
+.module-stat{padding:10px 12px;height:100%;border-radius:13px}
 .module-stat small{color:var(--text-muted);font-weight:700}
-.module-stat strong{display:block;font-size:24px;margin-top:5px}
+.module-stat strong{display:block;font-size:17px;margin-top:3px}
 .action-group{display:flex;flex-wrap:wrap;gap:6px}
 .status-badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}
 .status-active{background:#dcfce7;color:#15803d}
@@ -47,6 +47,15 @@ include __DIR__ . '/includes/layout-start.php';
 .mobile-record+.mobile-record{margin-top:10px}
 .form-help{font-size:11px;color:var(--text-muted)}
 @media(max-width:767.98px){.module-search{max-width:none;width:100%}.module-toolbar{align-items:stretch}}
+
+/* Compact invoice-list reference UI */
+.live-list-filter-card{padding:12px!important;border-radius:14px!important}
+.live-list-filter-card .form-control,.live-list-filter-card .form-select,.live-list-filter-card .input-group-text{min-height:38px;padding-top:7px;padding-bottom:7px}
+.live-list-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.live-list-status:before{content:"";width:7px;height:7px;border-radius:50%;background:#22c55e}
+.compact-stat{padding:10px 12px!important;border-radius:13px!important}
+.compact-stat small{font-size:11px;margin-bottom:3px!important}
+.compact-stat strong{font-size:17px!important}
 </style>
 <style>
 .action-icon-btn{
@@ -82,7 +91,7 @@ include __DIR__ . '/includes/layout-start.php';
     <div class="col-12 col-md-3"><div class="card-ui module-stat"><small>Average Rate</small><strong>₹<?= number_format($avg,2) ?></strong></div></div>
 </div>
 
-<section class="card-ui p-3">
+<section class="card-ui live-list-filter-card">
  <div class="module-toolbar mb-3">
    <div><h2 class="h6 fw-bold mb-1">Services</h2><small class="text-muted">Standard rates can be overridden by client-specific rates</small></div>
    <div class="d-flex flex-wrap gap-2 module-search">
