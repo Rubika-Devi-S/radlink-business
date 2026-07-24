@@ -134,6 +134,36 @@ if ($selectedFinancialYearId <= 0) {
     }
 }
 
+
+/* Dynamic invoice-item columns */
+$invoiceColumnStmt = $pdo->prepare(
+    "SELECT * FROM invoice_item_column_settings
+     WHERE business_id = ? AND status = 'active'
+     ORDER BY sort_order, id"
+);
+$invoiceColumnStmt->execute([$currentBusinessId]);
+$invoiceItemColumns = $invoiceColumnStmt->fetchAll();
+
+if (!$invoiceItemColumns) {
+    $invoiceItemColumns = [
+        ['column_key'=>'service','column_label'=>'Service','column_type'=>'system','is_visible'=>1,'is_required'=>1,'is_editable'=>1,'show_in_print'=>1,'column_width'=>'minmax(240px,1.6fr)'],
+        ['column_key'=>'quantity','column_label'=>'Count','column_type'=>'system','is_visible'=>1,'is_required'=>1,'is_editable'=>1,'show_in_print'=>0,'column_width'=>'90px'],
+        ['column_key'=>'rate','column_label'=>'Rate / Service','column_type'=>'system','is_visible'=>1,'is_required'=>1,'is_editable'=>0,'show_in_print'=>0,'column_width'=>'125px'],
+        ['column_key'=>'gross_amount','column_label'=>'Gross Amount','column_type'=>'system','is_visible'=>1,'is_required'=>0,'is_editable'=>0,'show_in_print'=>0,'column_width'=>'135px'],
+        ['column_key'=>'discount_type','column_label'=>'Discount','column_type'=>'system','is_visible'=>1,'is_required'=>0,'is_editable'=>1,'show_in_print'=>0,'column_width'=>'130px'],
+        ['column_key'=>'discount_value','column_label'=>'Value','column_type'=>'system','is_visible'=>1,'is_required'=>0,'is_editable'=>1,'show_in_print'=>0,'column_width'=>'100px'],
+        ['column_key'=>'final_amount','column_label'=>'Final Amount','column_type'=>'system','is_visible'=>1,'is_required'=>0,'is_editable'=>0,'show_in_print'=>1,'column_width'=>'145px'],
+    ];
+}
+$visibleInvoiceItemColumns = array_values(array_filter(
+    $invoiceItemColumns,
+    static fn(array $column): bool => (int)$column['is_visible'] === 1
+));
+$dynamicGrid = implode(' ', array_map(
+    static fn(array $column): string => trim((string)($column['column_width'] ?? '')) ?: 'minmax(110px,1fr)',
+    $visibleInvoiceItemColumns
+)) . ' auto';
+
 include __DIR__ . '/includes/layout-start.php';
 ?>
 
@@ -822,67 +852,36 @@ include __DIR__ . '/includes/layout-start.php';
 </div>
 
 <template id="invoiceItemTemplate">
-    <article class="invoice-item">
-        <div class="invoice-item-grid">
-            <div class="service-field">
-                <label class="form-label fw-semibold">Service</label>
-
-                <select class="form-select item-service">
-                    <option value="">Select service...</option>
-
-                    <?php foreach ($services as $service): ?>
-                    <option value="<?= (int)$service['id'] ?>" data-standard-rate="<?= e($service['standard_rate']) ?>"
-                        data-tax="<?= e($service['tax_percent']) ?>">
-                        <?= e(
-                                $service['service_code'] .
-                                ' - ' .
-                                $service['service_name'] .
-                                ' (' .
-                                $service['category_name'] .
-                                ')'
-                            ) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <div class="service-rate-note rate-caption">
-                    Select a service to calculate the amount automatically.
-                </div>
-            </div>
-
-            <div class="amount-field">
-                <label class="form-label fw-semibold">Amount</label>
-                <input type="number" class="form-control item-amount" value="0.00" step="0.01" readonly>
-            </div>
-
-            <div>
-                <label class="form-label fw-semibold">Discount</label>
-                <select class="form-select item-discount-type">
-                    <option value="none">None</option>
-                    <option value="amount">Amount</option>
-                    <option value="percentage">Percentage</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="form-label fw-semibold">Value</label>
-                <input type="number" class="form-control item-discount-value" value="0" min="0" step="0.01" disabled>
-            </div>
-
-            <div class="discounted-field">
-                <label class="form-label fw-semibold">Discounted Amount</label>
-                <input type="number" class="form-control item-discounted-amount" value="0.00" step="0.01" readonly>
-            </div>
-
-            <div class="remove-field">
-                <button type="button" class="btn btn-outline-danger remove-item" aria-label="Remove service">
-                    <i data-lucide="trash-2"></i>
-                </button>
-            </div>
-        </div>
-
-        <input type="hidden" class="item-tax" value="0">
-    </article>
+<article class="invoice-item">
+<div class="invoice-item-grid">
+<?php foreach ($visibleInvoiceItemColumns as $column): $key=(string)$column['column_key']; $label=(string)$column['column_label']; ?>
+<?php if ($key === 'service'): ?>
+<div class="service-field"><label class="form-label fw-semibold"><?= e($label) ?></label>
+<select class="form-select item-service"><option value="">Search service...</option>
+<?php foreach ($services as $service): ?><option value="<?= (int)$service['id'] ?>" data-standard-rate="<?= e($service['standard_rate']) ?>" data-tax="<?= e($service['tax_percent']) ?>"><?= e($service['service_code'].' - '.$service['service_name'].' ('.$service['category_name'].')') ?></option><?php endforeach; ?>
+</select><div class="service-rate-note rate-caption">Select a service to load the applicable hospital rate.</div></div>
+<?php elseif ($key === 'quantity'): ?>
+<div><label class="form-label fw-semibold"><?= e($label) ?></label><input type="number" class="form-control item-quantity" value="1" min="1" step="1" inputmode="numeric"></div>
+<?php elseif ($key === 'rate'): ?>
+<div class="amount-field"><label class="form-label fw-semibold"><?= e($label) ?></label><input type="number" class="form-control item-amount" value="0.00" step="0.01" readonly></div>
+<?php elseif ($key === 'gross_amount'): ?>
+<div class="amount-field"><label class="form-label fw-semibold"><?= e($label) ?></label><input type="number" class="form-control item-gross-amount" value="0.00" readonly></div>
+<?php elseif ($key === 'discount_type'): ?>
+<div><label class="form-label fw-semibold"><?= e($label) ?></label><select class="form-select item-discount-type"><option value="none">None</option><option value="amount">Amount</option><option value="percentage">Percentage</option></select></div>
+<?php elseif ($key === 'discount_value'): ?>
+<div><label class="form-label fw-semibold"><?= e($label) ?></label><input type="number" class="form-control item-discount-value" value="0" min="0" step="0.01" disabled></div>
+<?php elseif ($key === 'final_amount'): ?>
+<div class="discounted-field"><label class="form-label fw-semibold"><?= e($label) ?></label><input type="number" class="form-control item-discounted-amount" value="0.00" readonly></div>
+<?php else: $type=(string)$column['column_type']; $opts=json_decode((string)($column['options_json']??'[]'),true)?:[]; ?>
+<div><label class="form-label fw-semibold"><?= e($label) ?><?= (int)$column['is_required']===1?' *':'' ?></label>
+<?php if ($type==='select'): ?><select class="form-select item-custom-field" data-custom-key="<?= e($key) ?>" <?= (int)$column['is_required']===1?'required':'' ?>><option value="">Select...</option><?php foreach($opts as $opt): ?><option value="<?= e((string)$opt) ?>"><?= e((string)$opt) ?></option><?php endforeach; ?></select>
+<?php elseif ($type==='textarea'): ?><textarea class="form-control item-custom-field" data-custom-key="<?= e($key) ?>" rows="2" <?= (int)$column['is_required']===1?'required':'' ?>></textarea>
+<?php elseif ($type==='checkbox'): ?><div class="form-check mt-2"><input type="checkbox" class="form-check-input item-custom-field" data-custom-key="<?= e($key) ?>" value="1"></div>
+<?php else: ?><input type="<?= in_array($type,['number','date'],true)?e($type):'text' ?>" class="form-control item-custom-field" data-custom-key="<?= e($key) ?>" placeholder="<?= e((string)($column['placeholder']??'')) ?>" <?= (int)$column['is_required']===1?'required':'' ?>><?php endif; ?>
+</div>
+<?php endif; endforeach; ?>
+<div class="remove-field"><button type="button" class="btn btn-outline-danger remove-item"><i data-lucide="trash-2"></i></button></div>
+</div><input type="hidden" class="item-tax" value="0"></article>
 </template>
 
 
@@ -1048,6 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'billing_to' => (string)($item['billing_to'] ?? ''),
                 'rate_basis' => (string)($item['rate_basis'] ?? 'monthly'),
                 'description' => (string)($item['description'] ?? ''),
+                'custom_fields' => json_decode((string)($item['custom_fields_json'] ?? '{}'), true) ?: [],
             ],
             $existingItems
         ),
@@ -1286,6 +1286,13 @@ document.addEventListener('DOMContentLoaded', () => {
         serviceSelect.value = data.service_id || '';
         $(serviceSelect).trigger('change.select2');
 
+        const quantityInput = row.querySelector('.item-quantity');
+        if (quantityInput) quantityInput.value = Math.max(1, Number(data.quantity ?? 1));
+        row.querySelectorAll('.item-custom-field').forEach(field => {
+            const value = (data.custom_fields || {})[field.dataset.customKey];
+            if (field.type === 'checkbox') field.checked = Boolean(value);
+            else if (value !== undefined && value !== null) field.value = value;
+        });
         row.querySelector('.item-amount').value = Number(
             data.applied_rate ?? 0
         ).toFixed(2);
@@ -1310,6 +1317,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         discountValue.addEventListener('input', calculateInvoice);
         discountValue.addEventListener('change', calculateInvoice);
+        const qtyInput = row.querySelector('.item-quantity');
+        if (qtyInput) {
+            qtyInput.addEventListener('input', calculateInvoice);
+            qtyInput.addEventListener('change', calculateInvoice);
+        }
 
         row
             .querySelector('.remove-item')
@@ -1448,9 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     row.querySelector('.item-service').value
                 ),
 
-                // Compatibility values are stored internally only.
-                // They are not shown to the user and do not affect quantity.
-                quantity: 1,
+                quantity: Math.max(1, Number(row.querySelector('.item-quantity')?.value || 1)),
                 standard_rate: Number(
                     row.querySelector('.item-amount').value || 0
                 ),
@@ -1467,7 +1477,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 billing_from: invoiceDate.value,
                 billing_to: invoiceDate.value,
                 rate_basis: 'fixed',
-                description: ''
+                description: '',
+                custom_fields: Array.from(row.querySelectorAll('.item-custom-field')).reduce((values, field) => {
+                    values[field.dataset.customKey] = field.type === 'checkbox' ? field.checked : field.value;
+                    return values;
+                }, {})
             }))
             .filter(item => item.service_id > 0);
     }
@@ -1480,9 +1494,11 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsContainer
             .querySelectorAll('.invoice-item')
             .forEach(row => {
-                const amount = Number(
-                    row.querySelector('.item-amount').value || 0
-                );
+                const rate = Number(row.querySelector('.item-amount').value || 0);
+                const quantity = Math.max(1, Number(row.querySelector('.item-quantity')?.value || 1));
+                const amount = rate * quantity;
+                const grossInput = row.querySelector('.item-gross-amount');
+                if (grossInput) grossInput.value = amount.toFixed(2);
                 const discountType =
                     row.querySelector('.item-discount-type').value;
                 let discountValue = Number(
@@ -1783,3 +1799,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <?php include __DIR__ . '/includes/layout-end.php'; ?>
+<style>.invoice-item-grid{grid-template-columns:<?= e($dynamicGrid) ?>!important}</style>

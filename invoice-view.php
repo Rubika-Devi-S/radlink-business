@@ -93,11 +93,12 @@ include __DIR__.'/includes/layout-start.php';
 }
 
 .invoice-services-table th:nth-child(1) { width: 6%; }
-.invoice-services-table th:nth-child(2) { width: 36%; }
-.invoice-services-table th:nth-child(3) { width: 15%; }
-.invoice-services-table th:nth-child(4) { width: 14%; }
+.invoice-services-table th:nth-child(2) { width: 34%; }
+.invoice-services-table th:nth-child(3) { width: 10%; }
+.invoice-services-table th:nth-child(4) { width: 13%; }
 .invoice-services-table th:nth-child(5) { width: 14%; }
-.invoice-services-table th:nth-child(6) { width: 15%; }
+.invoice-services-table th:nth-child(6) { width: 12%; }
+.invoice-services-table th:nth-child(7) { width: 15%; }
 
 @media(max-width:1100px) {
     .invoice-filter-grid {
@@ -144,6 +145,9 @@ include __DIR__.'/includes/layout-start.php';
         <p><?= e($invoice['client_name']) ?></p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-light" href="<?= e(app_url('invoice-list.php')) ?>">
+            <i data-lucide="arrow-left"></i> Back to Invoice List
+        </a>
         <a class="btn btn-outline-primary" href="<?= e(app_url('invoice-form.php?id='.$id)) ?>">Edit</a>
         <a class="btn btn-brand" href="<?= e(app_url('invoice-print-viewer.php?id='.$id)) ?>">
             <i data-lucide="printer"></i> Print Invoice
@@ -176,10 +180,11 @@ include __DIR__.'/includes/layout-start.php';
                 <tr>
                     <th>S.No.</th>
                     <th>Services</th>
-                    <th>Service Rate</th>
+                    <th>Count</th>
+                    <th>Rate</th>
+                    <th>Gross</th>
                     <th>Discount</th>
-                    <th>Value</th>
-                    <th>Amount</th>
+                    <th>Final Amount</th>
                 </tr>
             </thead>
             <tbody>
@@ -203,9 +208,15 @@ include __DIR__.'/includes/layout-start.php';
                             <strong><?= e($item['service_name_snapshot']) ?></strong>
                             <small class="d-block text-muted"><?= e($item['service_code_snapshot'] ?: '') ?></small>
                         </td>
-                        <td>₹<?= number_format((float)$item['applied_rate'], 2) ?></td>
+                        <?php
+                        $quantity = max(1, (float)($item['quantity'] ?? 1));
+                        $rate = (float)($item['applied_rate'] ?? 0);
+                        $gross = $quantity * $rate;
+                        ?>
+                        <td><?= number_format($quantity, floor($quantity) == $quantity ? 0 : 2) ?></td>
+                        <td>₹<?= number_format($rate, 2) ?></td>
+                        <td>₹<?= number_format($gross, 2) ?></td>
                         <td><?= e($discountDisplay) ?></td>
-                        <td>₹<?= number_format($discountAmount, 2) ?></td>
                         <td><strong>₹<?= number_format((float)$item['line_total'], 2) ?></strong></td>
                     </tr>
                 <?php endforeach; ?>
@@ -231,11 +242,17 @@ include __DIR__.'/includes/layout-start.php';
             <article class="card-ui p-3 mobile-invoice-card">
                 <strong><?= e($item['service_name_snapshot']) ?></strong>
                 <small class="d-block text-muted"><?= e($item['service_code_snapshot'] ?: '') ?></small>
+                <?php
+                $quantity = max(1, (float)($item['quantity'] ?? 1));
+                $rate = (float)($item['applied_rate'] ?? 0);
+                $gross = $quantity * $rate;
+                ?>
                 <div class="row g-2 mt-2 small">
-                    <div class="col-6">Service Rate<br><strong>₹<?= number_format((float)$item['applied_rate'], 2) ?></strong></div>
+                    <div class="col-6">Count<br><strong><?= number_format($quantity, floor($quantity) == $quantity ? 0 : 2) ?></strong></div>
+                    <div class="col-6">Rate<br><strong>₹<?= number_format($rate, 2) ?></strong></div>
+                    <div class="col-6">Gross<br><strong>₹<?= number_format($gross, 2) ?></strong></div>
                     <div class="col-6">Discount<br><strong><?= e($discountDisplay) ?></strong></div>
-                    <div class="col-6">Value<br><strong>₹<?= number_format($discountAmount, 2) ?></strong></div>
-                    <div class="col-6">Amount<br><strong>₹<?= number_format((float)$item['line_total'], 2) ?></strong></div>
+                    <div class="col-12">Final Amount<br><strong>₹<?= number_format((float)$item['line_total'], 2) ?></strong></div>
                 </div>
             </article>
         <?php endforeach; ?>

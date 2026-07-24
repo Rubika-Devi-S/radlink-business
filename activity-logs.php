@@ -710,7 +710,6 @@ include __DIR__ . '/includes/layout-start.php';
                         <th>Description</th>
                     <?php endif; ?>
                     <th>IP Address</th>
-                    <th>Details</th>
                 </tr>
             </thead>
 
@@ -820,22 +819,6 @@ include __DIR__ . '/includes/layout-start.php';
                         <td><?= e($log['ip_address'] ?: '—') ?></td>
 
                         <td>
-                            <button
-                                class="btn btn-sm btn-light"
-                                type="button"
-                                data-log-details='<?= e(
-                                    json_encode(
-                                        $details,
-                                        JSON_UNESCAPED_UNICODE
-                                        | JSON_UNESCAPED_SLASHES
-                                        | JSON_HEX_APOS
-                                        | JSON_HEX_QUOT
-                                    )
-                                ) ?>'
-                            >
-                                <i data-lucide="eye"></i>
-                                View
-                            </button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -919,22 +902,6 @@ include __DIR__ . '/includes/layout-start.php';
                     <small class="text-muted">
                         IP: <?= e($log['ip_address'] ?: '—') ?>
                     </small>
-
-                    <button
-                        class="btn btn-sm btn-light"
-                        type="button"
-                        data-log-details='<?= e(
-                            json_encode(
-                                $details,
-                                JSON_UNESCAPED_UNICODE
-                                | JSON_UNESCAPED_SLASHES
-                                | JSON_HEX_APOS
-                                | JSON_HEX_QUOT
-                            )
-                        ) ?>'
-                    >
-                        View
-                    </button>
                 </div>
             </article>
         <?php endforeach; ?>
@@ -1014,71 +981,9 @@ include __DIR__ . '/includes/layout-start.php';
     <?php endif; ?>
 </section>
 
-<div class="modal fade" id="activityDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content card-ui">
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title">Activity Details</h5>
-                    <small class="text-muted">
-                        Complete audit information for this event.
-                    </small>
-                </div>
-                <button
-                    class="btn-close"
-                    type="button"
-                    data-bs-dismiss="modal"
-                ></button>
-            </div>
-
-            <div class="modal-body">
-                <pre class="activity-json" id="activityDetailJson"></pre>
-            </div>
-
-            <div class="modal-footer">
-                <button
-                    class="btn btn-light"
-                    type="button"
-                    data-bs-dismiss="modal"
-                >
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const detailModal = bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('activityDetailModal')
-    );
-
-    const detailJson = document.getElementById('activityDetailJson');
-
-    document.querySelectorAll('[data-log-details]').forEach(button => {
-        button.addEventListener('click', () => {
-            try {
-                const details = JSON.parse(button.dataset.logDetails);
-                detailJson.textContent = JSON.stringify(
-                    details,
-                    null,
-                    2
-                );
-                detailModal.show();
-            } catch (error) {
-                AppToast.show(
-                    'error',
-                    'Unable to read the activity details.'
-                );
-            }
-        });
-    });
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-});
+if (window.lucide) { lucide.createIcons(); }
 </script>
 
 <?php include __DIR__ . '/includes/layout-end.php'; ?>

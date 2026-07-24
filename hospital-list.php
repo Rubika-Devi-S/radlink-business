@@ -176,6 +176,63 @@ include __DIR__ . '/includes/layout-start.php';
     width: 16px;
     height: 16px;
 }
+
+/* Compact invoice-list reference UI */
+.live-list-filter-card{padding:12px!important;border-radius:14px!important}
+.live-list-filter-card .form-control,.live-list-filter-card .form-select,.live-list-filter-card .input-group-text{min-height:38px;padding-top:7px;padding-bottom:7px}
+.live-list-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.live-list-status:before{content:"";width:7px;height:7px;border-radius:50%;background:#22c55e}
+.compact-stat{padding:10px 12px!important;border-radius:13px!important}
+.compact-stat small{font-size:11px;margin-bottom:3px!important}
+.compact-stat strong{font-size:17px!important}
+
+.hospital-filter-toolbar {
+    display: grid;
+    grid-template-columns: minmax(280px, 2fr) minmax(160px, .8fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.hospital-filter-toolbar .input-group {
+    max-width: none !important;
+}
+
+.hospital-list-table td,
+.hospital-list-table td *,
+.hospital-list-table strong,
+.hospital-list-table .fw-bold {
+    font-weight: 400 !important;
+}
+
+.hospital-list-table th {
+    font-weight: 700;
+}
+
+.hospital-list-table td small {
+    font-weight: 400 !important;
+}
+
+.hospital-row-hidden {
+    display: none !important;
+}
+
+.hospital-empty-filter {
+    display: none;
+    padding: 28px 15px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+@media(max-width:767.98px) {
+    .hospital-filter-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .hospital-filter-toolbar > * {
+        width: 100%;
+    }
+}
+
 </style>
 
 <div class="page-head">
@@ -191,27 +248,29 @@ include __DIR__ . '/includes/layout-start.php';
     <?php endif; ?>
 </div>
 
-<section class="card-ui p-3 mb-3">
-    <form method="get" class="master-toolbar">
+<section class="card-ui live-list-filter-card mb-3">
+    <form method="get" class="master-toolbar hospital-filter-toolbar" id="hospitalLiveFilter">
         <div class="input-group" style="max-width:460px">
             <span class="input-group-text"><i data-lucide="search"></i></span>
-            <input class="form-control" name="q" value="<?= e($search) ?>"
+            <input class="form-control" type="search" name="q" id="hospitalLiveSearch" value="<?= e($search) ?>"
                 placeholder="Search hospital code, name, mobile, email or city">
         </div>
         <div class="d-flex gap-2">
-            <select class="form-select" name="status">
+            <select class="form-select" name="status" id="hospitalStatusFilter">
                 <option value="">All Status</option>
                 <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
                 <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option>
             </select>
-            <button class="btn btn-brand">Filter</button>
+            <button class="btn btn-light" type="button" id="hospitalFilterReset">
+                <i data-lucide="rotate-ccw"></i> Reset
+            </button>
         </div>
     </form>
 </section>
 
 <section class="card-ui p-3">
     <div class="desktop-table table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table align-middle mb-0 hospital-list-table">
             <thead>
                 <tr>
                     <th>Hospital</th>
@@ -229,7 +288,20 @@ include __DIR__ . '/includes/layout-start.php';
                     <td colspan="8" class="text-center py-4 text-muted">No hospitals found.</td>
                 </tr><?php endif; ?>
                 <?php foreach ($hospitals as $hospital): ?>
-                <tr>
+                <tr data-hospital-row
+                    data-status="<?= e($hospital['status']) ?>"
+                    data-search="<?= e(strtolower(implode(' ', array_filter([
+                        $hospital['client_code'],
+                        $hospital['client_name'],
+                        $hospital['contact_person'],
+                        $hospital['mobile'],
+                        $hospital['alternate_mobile'],
+                        $hospital['email'],
+                        $hospital['city'],
+                        $hospital['district'],
+                        $hospital['state'],
+                        $hospital['gst_number']
+                    ])))) ?>">
                     <td><strong><?= e($hospital['client_name']) ?></strong><small
                             class="d-block text-muted"><?= e($hospital['client_code']) ?></small></td>
                     <td><?= e($hospital['mobile'] ?: '—') ?><small
@@ -277,11 +349,30 @@ include __DIR__ . '/includes/layout-start.php';
                 <?php endforeach; ?>
             </tbody>
         </table>
+        <div class="hospital-empty-filter" id="hospitalDesktopEmpty">
+            <i data-lucide="search-x"></i>
+            <div class="mt-2">No matching hospitals</div>
+            <small>Change the search text or status filter.</small>
+        </div>
     </div>
 
     <div class="mobile-card-list">
         <?php foreach ($hospitals as $hospital): ?>
-        <article class="card-ui master-card">
+        <article class="card-ui master-card"
+            data-hospital-row
+            data-status="<?= e($hospital['status']) ?>"
+            data-search="<?= e(strtolower(implode(' ', array_filter([
+                $hospital['client_code'],
+                $hospital['client_name'],
+                $hospital['contact_person'],
+                $hospital['mobile'],
+                $hospital['alternate_mobile'],
+                $hospital['email'],
+                $hospital['city'],
+                $hospital['district'],
+                $hospital['state'],
+                $hospital['gst_number']
+            ])))) ?>">
             <div class="d-flex justify-content-between gap-2">
                 <div><strong><?= e($hospital['client_name']) ?></strong><small
                         class="d-block text-muted"><?= e($hospital['client_code']) ?></small></div>
@@ -320,6 +411,11 @@ include __DIR__ . '/includes/layout-start.php';
             </div>
         </article>
         <?php endforeach; ?>
+        <div class="hospital-empty-filter" id="hospitalMobileEmpty">
+            <i data-lucide="search-x"></i>
+            <div class="mt-2">No matching hospitals</div>
+            <small>Change the search text or status filter.</small>
+        </div>
     </div>
 </section>
 
@@ -397,174 +493,76 @@ include __DIR__ . '/includes/layout-start.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('hospitalModal'));
-    const form = document.getElementById('hospitalForm');
+    const filterForm = document.getElementById('hospitalLiveFilter');
+    const searchInput = document.getElementById('hospitalLiveSearch');
+    const statusFilter = document.getElementById('hospitalStatusFilter');
+    const resetButton = document.getElementById('hospitalFilterReset');
+    const desktopEmpty = document.getElementById('hospitalDesktopEmpty');
+    const mobileEmpty = document.getElementById('hospitalMobileEmpty');
+    const hospitalRows = Array.from(
+        document.querySelectorAll('[data-hospital-row]')
+    );
 
-    const modalTitle = document.getElementById('hospitalModalTitle');
-    const modalSubtitle = document.getElementById('hospitalModalSubtitle');
-    const saveButton = document.getElementById('hospitalModalSaveButton');
-    const saveText = document.getElementById('hospitalModalSaveText');
+    function applyHospitalFilters() {
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        const status = statusFilter?.value || '';
 
-    function resetForm() {
-        form.reset();
-        form.querySelector('[name="id"]').value = '';
-        form.querySelector('[name="state"]').value = 'Tamil Nadu';
-        form.querySelector('[name="status"]').value = 'active';
-        form.querySelector('[name="default_billing_mode"]').value = 'credit';
-    }
+        let desktopVisible = 0;
+        let mobileVisible = 0;
 
-    function fillForm(row) {
-        Object.entries(row).forEach(([key, value]) => {
-            const input = form.querySelector('[name="' + key + '"]');
+        hospitalRows.forEach(record => {
+            const matchesSearch =
+                query === '' ||
+                (record.dataset.search || '').includes(query);
 
-            if (input) {
-                input.value = value ?? '';
-            }
-        });
-    }
+            const matchesStatus =
+                status === '' ||
+                record.dataset.status === status;
 
-    function setHospitalMode(mode) {
-        const isView = mode === 'view';
-        const isEdit = mode === 'edit';
+            const visible = matchesSearch && matchesStatus;
 
-        form.querySelectorAll('input, select, textarea').forEach(field => {
-            if (
-                field.name === 'csrf_token' ||
-                field.name === 'id'
-            ) {
-                return;
-            }
+            record.classList.toggle('hospital-row-hidden', !visible);
 
-            field.disabled = isView;
-        });
-
-        if (mode === 'add') {
-            modalTitle.textContent = 'Quick Add Hospital';
-            modalSubtitle.textContent =
-                'Enter hospital details and click Save Hospital.';
-            saveText.textContent = 'Save Hospital';
-            saveButton.hidden = false;
-        } else if (isEdit) {
-            modalTitle.textContent = 'Edit Hospital';
-            modalSubtitle.textContent =
-                'Update the hospital details and click Save Changes.';
-            saveText.textContent = 'Save Changes';
-            saveButton.hidden = false;
-        } else {
-            modalTitle.textContent = 'View Hospital';
-            modalSubtitle.textContent =
-                'Hospital details are shown in read-only mode.';
-            saveButton.hidden = true;
-        }
-    }
-
-    document.getElementById('addHospitalButton').addEventListener('click', () => {
-        resetForm();
-        setHospitalMode('add');
-        modal.show();
-    });
-
-    document.querySelectorAll('[data-view-hospital]').forEach(button => {
-        button.addEventListener('click', () => {
-            resetForm();
-            fillForm(JSON.parse(button.dataset.record));
-            setHospitalMode('view');
-            modal.show();
-        });
-    });
-
-    document.querySelectorAll('[data-edit-hospital]').forEach(button => {
-        button.addEventListener('click', () => {
-            resetForm();
-            fillForm(JSON.parse(button.dataset.record));
-            setHospitalMode('edit');
-            modal.show();
-        });
-    });
-
-    form.addEventListener('submit', async event => {
-        event.preventDefault();
-
-        const originalHtml = saveButton.innerHTML;
-        saveButton.disabled = true;
-        saveButton.innerHTML =
-            '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
-
-        try {
-            const response = await fetch(
-                '<?= e(app_url('api/hospital.php')) ?>', {
-                    method: 'POST',
-                    body: (() => {
-                        const formData = new FormData(form);
-                        formData.set('action', 'save');
-                        return formData;
-                    })(),
-                    credentials: 'same-origin',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
+            if (visible) {
+                if (record.matches('tr')) {
+                    desktopVisible++;
+                } else {
+                    mobileVisible++;
                 }
-            );
-
-            const raw = await response.text();
-            let result;
-
-            try {
-                result = JSON.parse(raw);
-            } catch (error) {
-                throw new Error(
-                    raw.replace(/<[^>]*>/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim() ||
-                    'Invalid server response.'
-                );
             }
-
-            AppToast.show(
-                result.success ? 'success' : 'error',
-                result.message
-            );
-
-            if (result.success) {
-                setTimeout(() => location.reload(), 350);
-            }
-        } catch (error) {
-            AppToast.show(
-                'error',
-                error.message || 'Unable to save hospital.'
-            );
-        } finally {
-            saveButton.disabled = false;
-            saveButton.innerHTML = originalHtml;
-
-            if (window.lucide) {
-                lucide.createIcons();
-            }
-        }
-    });
-
-    document.querySelectorAll('[data-action]').forEach(button => {
-        button.addEventListener('click', async () => {
-            if (button.dataset.action === 'delete' && !confirm('Delete this hospital?'))
-                return;
-
-            const fd = new FormData();
-            fd.append('csrf_token', window.APP_CSRF);
-            fd.append('action', button.dataset.action);
-            fd.append('id', button.dataset.id);
-
-            const response = await fetch('<?= e(app_url('api/hospital.php')) ?>', {
-                method: 'POST',
-                body: fd,
-                credentials: 'same-origin'
-            });
-
-            const result = await response.json();
-            AppToast.show(result.success ? 'success' : 'error', result.message);
-            if (result.success) setTimeout(() => location.reload(), 350);
         });
+
+        if (desktopEmpty) {
+            desktopEmpty.style.display =
+                desktopVisible === 0 ? 'block' : 'none';
+        }
+
+        if (mobileEmpty) {
+            mobileEmpty.style.display =
+                mobileVisible === 0 ? 'block' : 'none';
+        }
+    }
+
+    searchInput?.addEventListener('input', applyHospitalFilters);
+    statusFilter?.addEventListener('change', applyHospitalFilters);
+
+    filterForm?.addEventListener('submit', event => {
+        event.preventDefault();
+        applyHospitalFilters();
     });
+
+    resetButton?.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        if (statusFilter) statusFilter.value = '';
+        applyHospitalFilters();
+        searchInput?.focus();
+    });
+
+    applyHospitalFilters();
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 });
 </script>
 

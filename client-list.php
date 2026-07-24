@@ -190,7 +190,7 @@ include __DIR__ . '/includes/layout-start.php';
     }
 }
 
-<style>.client-actions .icon-action-btn {
+.client-actions .icon-action-btn {
     width: 38px;
     height: 38px;
     padding: 0 !important;
@@ -204,7 +204,69 @@ include __DIR__ . '/includes/layout-start.php';
     width: 18px;
     height: 18px;
 }
-</style>
+
+.client-filter-card {
+    border-radius: 14px;
+}
+
+.client-filter-card .form-control,
+.client-filter-card .form-select,
+.client-filter-card .input-group-text,
+.client-filter-card .btn {
+    min-height: 40px;
+}
+
+
+.client-empty-filter {
+    display: none;
+    padding: 28px 15px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.client-row-hidden {
+    display: none !important;
+}
+
+@media(max-width:991.98px) {
+    .client-toolbar {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .client-toolbar .input-group {
+        grid-column: 1 / -1;
+    }
+}
+
+@media(max-width:767.98px) {
+    .client-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .client-toolbar .input-group {
+        grid-column: auto;
+    }
+
+    .client-live-indicator {
+        justify-content: flex-start;
+    }
+}
+
+
+.client-list-table td,
+.client-list-table td *,
+.client-list-table strong,
+.client-list-table .fw-bold {
+    font-weight: 400 !important;
+}
+
+.client-list-table th {
+    font-weight: 700;
+}
+
+.client-list-table td small {
+    font-weight: 400 !important;
+}
 
 </style>
 
@@ -219,36 +281,38 @@ include __DIR__ . '/includes/layout-start.php';
     </button>
 </div>
 
-<section class="card-ui p-3 mb-3">
-    <form method="get" class="client-toolbar">
-        <input class="form-control" name="q" value="<?= e($search) ?>"
-            placeholder="Search client, hospital, mobile, email, contact or city">
-        <select class="form-select" name="hospital_id">
+<section class="card-ui p-3 mb-3 client-filter-card">
+    <form method="get" class="client-toolbar" id="clientLiveFilterForm">
+        <div class="input-group"><span class="input-group-text"><i data-lucide="search"></i></span><input class="form-control" type="search" name="q" id="clientLiveSearch" value="<?= e($search) ?>"
+            placeholder="Search client, hospital, mobile, email, contact or city"></div>
+        <select class="form-select" name="hospital_id" id="clientHospitalFilter">
             <option value="">All Hospitals</option>
             <?php foreach ($hospitals as $hospital): ?>
             <option value="<?= (int)$hospital['id'] ?>" <?= $hospitalId === (int)$hospital['id'] ? 'selected' : '' ?>>
                 <?= e($hospital['client_code'] . ' - ' . $hospital['client_name']) ?></option>
             <?php endforeach; ?>
         </select>
-        <select class="form-select" name="client_type_id">
+        <select class="form-select" name="client_type_id" id="clientTypeFilter">
             <option value="">All Client Types</option>
             <?php foreach ($clientTypes as $type): ?>
             <option value="<?= (int)$type['id'] ?>" <?= $clientTypeId === (int)$type['id'] ? 'selected' : '' ?>>
                 <?= e($type['type_name']) ?></option>
             <?php endforeach; ?>
         </select>
-        <select class="form-select" name="status">
+        <select class="form-select" name="status" id="clientStatusFilter">
             <option value="">All Status</option>
             <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
             <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option>
         </select>
-        <button class="btn btn-brand">Filter</button>
+        <button class="btn btn-light" type="button" id="clientFilterReset">
+            <i data-lucide="rotate-ccw"></i> Reset
+        </button>
     </form>
 </section>
 
 <section class="card-ui p-3">
     <div class="desktop-table table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table align-middle mb-0 client-list-table">
             <thead>
                 <tr>
                     <th>Client</th>
@@ -265,7 +329,23 @@ include __DIR__ . '/includes/layout-start.php';
                     <td colspan="7" class="text-center py-4 text-muted">No clients found.</td>
                 </tr><?php endif; ?>
                 <?php foreach ($clients as $client): ?>
-                <tr>
+                <tr data-client-row
+                    data-hospital-id="<?= (int)$client['parent_hospital_id'] ?>"
+                    data-client-type-id="<?= (int)$client['client_type_id'] ?>"
+                    data-status="<?= e($client['status']) ?>"
+                    data-search="<?= e(strtolower(implode(' ', array_filter([
+                        $client['client_code'],
+                        $client['client_name'],
+                        $client['hospital_name'],
+                        $client['hospital_code'],
+                        $client['client_type_name'],
+                        $client['mobile'],
+                        $client['email'],
+                        $client['contact_person'],
+                        $client['city'],
+                        $client['district'],
+                        $client['state']
+                    ])))) ?>">
                     <td><strong><?= e($client['client_name']) ?></strong><small
                             class="d-block text-muted"><?= e($client['client_code']) ?></small></td>
                     <td><strong><?= e($client['hospital_name']) ?></strong><small
@@ -302,11 +382,33 @@ include __DIR__ . '/includes/layout-start.php';
                 <?php endforeach; ?>
             </tbody>
         </table>
+        <div class="client-empty-filter" id="clientDesktopEmpty">
+            <i data-lucide="search-x"></i>
+            <div class="fw-bold mt-2">No matching clients</div>
+            <small>Change the search or filter values.</small>
+        </div>
     </div>
 
     <div class="mobile-card-list">
         <?php foreach ($clients as $client): ?>
-        <article class="card-ui client-card">
+        <article class="card-ui client-card"
+            data-client-row
+            data-hospital-id="<?= (int)$client['parent_hospital_id'] ?>"
+            data-client-type-id="<?= (int)$client['client_type_id'] ?>"
+            data-status="<?= e($client['status']) ?>"
+            data-search="<?= e(strtolower(implode(' ', array_filter([
+                $client['client_code'],
+                $client['client_name'],
+                $client['hospital_name'],
+                $client['hospital_code'],
+                $client['client_type_name'],
+                $client['mobile'],
+                $client['email'],
+                $client['contact_person'],
+                $client['city'],
+                $client['district'],
+                $client['state']
+            ])))) ?>">
             <div class="d-flex justify-content-between gap-2">
                 <div><strong><?= e($client['client_name']) ?></strong><small
                         class="d-block text-muted"><?= e($client['client_code']) ?></small></div>
@@ -335,6 +437,11 @@ include __DIR__ . '/includes/layout-start.php';
             </div>
         </article>
         <?php endforeach; ?>
+        <div class="client-empty-filter" id="clientMobileEmpty">
+            <i data-lucide="search-x"></i>
+            <div class="fw-bold mt-2">No matching clients</div>
+            <small>Change the search or filter values.</small>
+        </div>
     </div>
 </section>
 
@@ -426,6 +533,89 @@ include __DIR__ . '/includes/layout-start.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const liveFilterForm = document.getElementById('clientLiveFilterForm');
+    const liveSearch = document.getElementById('clientLiveSearch');
+    const hospitalFilter = document.getElementById('clientHospitalFilter');
+    const typeFilter = document.getElementById('clientTypeFilter');
+    const statusFilter = document.getElementById('clientStatusFilter');
+    const resetFilter = document.getElementById('clientFilterReset');
+    const desktopEmpty = document.getElementById('clientDesktopEmpty');
+    const mobileEmpty = document.getElementById('clientMobileEmpty');
+    const clientRows = Array.from(document.querySelectorAll('[data-client-row]'));
+
+    function applyClientFilters() {
+        const query = (liveSearch?.value || '').trim().toLowerCase();
+        const hospitalId = hospitalFilter?.value || '';
+        const clientTypeId = typeFilter?.value || '';
+        const status = statusFilter?.value || '';
+
+        let desktopVisible = 0;
+        let mobileVisible = 0;
+
+        clientRows.forEach(row => {
+            const matchesSearch =
+                query === '' ||
+                (row.dataset.search || '').includes(query);
+
+            const matchesHospital =
+                hospitalId === '' ||
+                row.dataset.hospitalId === hospitalId;
+
+            const matchesType =
+                clientTypeId === '' ||
+                row.dataset.clientTypeId === clientTypeId;
+
+            const matchesStatus =
+                status === '' ||
+                row.dataset.status === status;
+
+            const visible =
+                matchesSearch &&
+                matchesHospital &&
+                matchesType &&
+                matchesStatus;
+
+            row.classList.toggle('client-row-hidden', !visible);
+
+            if (visible) {
+                if (row.matches('tr')) {
+                    desktopVisible++;
+                } else {
+                    mobileVisible++;
+                }
+            }
+        });
+
+        if (desktopEmpty) {
+            desktopEmpty.style.display = desktopVisible === 0 ? 'block' : 'none';
+        }
+
+        if (mobileEmpty) {
+            mobileEmpty.style.display = mobileVisible === 0 ? 'block' : 'none';
+        }
+    }
+
+    liveSearch?.addEventListener('input', applyClientFilters);
+    hospitalFilter?.addEventListener('change', applyClientFilters);
+    typeFilter?.addEventListener('change', applyClientFilters);
+    statusFilter?.addEventListener('change', applyClientFilters);
+
+    liveFilterForm?.addEventListener('submit', event => {
+        event.preventDefault();
+        applyClientFilters();
+    });
+
+    resetFilter?.addEventListener('click', () => {
+        if (liveSearch) liveSearch.value = '';
+        if (hospitalFilter) hospitalFilter.value = '';
+        if (typeFilter) typeFilter.value = '';
+        if (statusFilter) statusFilter.value = '';
+        applyClientFilters();
+        liveSearch?.focus();
+    });
+
+    applyClientFilters();
+
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('clientModal'));
     const form = document.getElementById('clientForm');
 

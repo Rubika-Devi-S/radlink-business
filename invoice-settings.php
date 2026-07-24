@@ -460,7 +460,8 @@ include __DIR__ . '/includes/layout-start.php';
             <button class="settings-tab" type="button" data-settings-tab="payment">
                 Bank & UPI
             </button>
-            <button class="settings-tab" type="button" data-settings-tab="printing">
+            <button class="settings-tab" type="button" data-settings-tab="columns"><i data-lucide="columns-3"></i> Service Columns</button>
+<button class="settings-tab" type="button" data-settings-tab="printing">
                 Printing
             </button>
         </div>
@@ -1179,7 +1180,19 @@ include __DIR__ . '/includes/layout-start.php';
                 </section>
             </div>
 
-            <div class="settings-panel" data-settings-panel="printing">
+            
+<div class="settings-panel" data-settings-panel="columns">
+<section class="settings-section mb-3">
+<div class="settings-section-header"><i data-lucide="columns-3"></i><h2>Invoice Service Columns</h2></div>
+<div class="settings-section-body">
+<p class="text-muted">Configure standard and custom columns used in Create Invoice. Custom values are stored per service row.</p>
+<div class="table-responsive"><table class="table align-middle" id="columnSettingsTable">
+<thead><tr><th>Label</th><th>Key</th><th>Type</th><th>Visible</th><th>Required</th><th>Print</th><th>Order</th><th></th></tr></thead><tbody></tbody></table></div>
+<button class="btn btn-brand btn-sm" type="button" id="addColumnRow"><i data-lucide="plus"></i> Add Custom Column</button>
+<button class="btn btn-outline-primary btn-sm" type="button" id="saveColumnRows"><i data-lucide="save"></i> Save Columns</button>
+</div></section></div>
+
+<div class="settings-panel" data-settings-panel="printing">
                 <section class="settings-section mb-3">
                     <div class="settings-section-header">
                         <i data-lucide="printer"></i>
@@ -1360,8 +1373,8 @@ include __DIR__ . '/includes/layout-start.php';
                         </div>
                     </div>
 
-                    <table class="preview-table">
-                        <thead>
+                    <table class="preview-table" id="previewServiceTable">
+                        <thead id="previewServiceHead">
                             <tr>
                                 <th>S.NO.</th>
                                 <th>SERVICES</th>
@@ -1371,7 +1384,7 @@ include __DIR__ . '/includes/layout-start.php';
                             </tr>
                         </thead>
 
-                        <tbody>
+                        <tbody id="previewServiceBody">
                             <tr>
                                 <td class="text-center">1</td>
                                 <td>CT BRAIN REPORTING</td>
@@ -1433,7 +1446,7 @@ include __DIR__ . '/includes/layout-start.php';
                                     <?= e($defaultBank['upi_id'] ?? '9787457070-kf4c@ybl') ?>
                                 </div>
 
-                                <div class="preview-qr">
+                                <div class="preview-qr" id="previewQr">
                                     Dynamic UPI QR
                                 </div>
                             </div>
@@ -2046,6 +2059,740 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) {
         lucide.createIcons();
     }
+});
+</script>
+
+
+<!-- RADLINK_DYNAMIC_COLUMNS_SCRIPT_START -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tableBody = document.querySelector('#columnSettingsTable tbody');
+    const addButton = document.getElementById('addColumnRow');
+    const saveButton = document.getElementById('saveColumnRows');
+
+    if (!tableBody || !addButton || !saveButton) {
+        return;
+    }
+
+    const endpoint = <?= json_encode(app_url('api/invoice-columns.php')) ?>;
+    const csrfToken = <?= json_encode(csrf_token()) ?>;
+
+    const escapeHtml = value => String(value ?? '').replace(
+        /[&<>"']/g,
+        character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[character]
+    );
+
+    const typeOptions = [
+        'system',
+        'text',
+        'number',
+        'date',
+        'select',
+        'checkbox',
+        'textarea'
+    ];
+
+    function buildRow(column = {}) {
+        const isSystem = column.column_type === 'system';
+        const id = Number(column.id || 0);
+        const key = escapeHtml(column.column_key || '');
+        const label = escapeHtml(column.column_label || '');
+        const selectedType = column.column_type || 'text';
+
+        const options = typeOptions.map(type => {
+            const selected = type === selectedType ? ' selected' : '';
+            return `<option value="${type}"${selected}>${type}</option>`;
+        }).join('');
+
+        return `
+            <tr data-column-id="${id}">
+                <td>
+                    <input type="text"
+                           class="form-control form-control-sm column-label"
+                           value="${label}"
+                           placeholder="Column label">
+                </td>
+                <td>
+                    <input type="text"
+                           class="form-control form-control-sm column-key"
+                           value="${key}"
+                           placeholder="column_key"
+                           ${isSystem ? 'readonly' : ''}>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm column-type"
+                            ${isSystem ? 'disabled' : ''}>
+                        ${options}
+                    </select>
+                    ${isSystem
+                        ? `<input type="hidden" class="column-type-hidden" value="system">`
+                        : ''}
+                </td>
+                <td class="text-center">
+                    <input type="checkbox"
+                           class="form-check-input column-visible"
+                           ${Number(column.is_visible ?? 1) === 1 ? 'checked' : ''}>
+                </td>
+                <td class="text-center">
+                    <input type="checkbox"
+                           class="form-check-input column-required"
+                           ${Number(column.is_required || 0) === 1 ? 'checked' : ''}>
+                </td>
+                <td class="text-center">
+                    <input type="checkbox"
+                           class="form-check-input column-print"
+                           ${Number(column.show_in_print || 0) === 1 ? 'checked' : ''}>
+                </td>
+                <td>
+                    <input type="number"
+                           class="form-control form-control-sm column-order"
+                           value="${Number(column.sort_order || 0)}"
+                           min="0"
+                           step="1">
+                </td>
+                <td class="text-end">
+                    <div class="d-flex align-items-center justify-content-end gap-1">
+                        ${isSystem ? '<span class="badge text-bg-light">System</span>' : ''}
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger delete-column"
+                                title="Delete column"
+                                ${column.column_key === 'service' ? 'disabled' : ''}>
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    function showMessage(type, message) {
+        if (window.AppToast && typeof window.AppToast.show === 'function') {
+            window.AppToast.show(type, message);
+            return;
+        }
+
+        alert(message);
+    }
+
+    async function parseResponse(response) {
+        const text = await response.text();
+
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            throw new Error(
+                text.trim() !== ''
+                    ? text
+                    : 'The server returned an invalid response.'
+            );
+        }
+    }
+
+    async function loadColumns() {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                    Loading columns...
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await parseResponse(response);
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Unable to load invoice columns.');
+            }
+
+            const columns = Array.isArray(result.data?.columns)
+                ? result.data.columns
+                : [];
+
+            tableBody.innerHTML = columns.length
+                ? columns.map(buildRow).join('')
+                : `<tr>
+                       <td colspan="8" class="text-center text-muted py-4">
+                           No columns configured. Run the supplied database migration.
+                       </td>
+                   </tr>`;
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        } catch (error) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger py-4">
+                        ${escapeHtml(error.message)}
+                    </td>
+                </tr>
+            `;
+
+            showMessage('error', error.message);
+        }
+    }
+
+    addButton.addEventListener('click', function () {
+        const emptyRow = tableBody.querySelector('td[colspan="8"]');
+
+        if (emptyRow) {
+            tableBody.innerHTML = '';
+        }
+
+        const nextOrder = tableBody.querySelectorAll('tr').length * 10 + 100;
+
+        tableBody.insertAdjacentHTML(
+            'beforeend',
+            buildRow({
+                id: 0,
+                column_label: '',
+                column_key: '',
+                column_type: 'text',
+                is_visible: 1,
+                is_required: 0,
+                show_in_print: 0,
+                sort_order: nextOrder
+            })
+        );
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        const lastRow = tableBody.lastElementChild;
+        lastRow?.querySelector('.column-label')?.focus();
+    });
+
+    tableBody.addEventListener('click', async function (event) {
+        const deleteButton = event.target.closest('.delete-column');
+
+        if (!deleteButton || deleteButton.disabled) {
+            return;
+        }
+
+        const row = deleteButton.closest('tr');
+        const columnId = Number(row?.dataset.columnId || 0);
+        const label = row?.querySelector('.column-label')?.value.trim() || 'this column';
+
+        if (!confirm(`Delete "${label}"? Existing saved custom values will remain in old invoice JSON, but the column will no longer appear.`)) {
+            return;
+        }
+
+        if (columnId <= 0) {
+            row?.remove();
+            return;
+        }
+
+        deleteButton.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+            formData.append('action', 'delete_column');
+            formData.append('column_id', String(columnId));
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await parseResponse(response);
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Unable to delete invoice column.');
+            }
+
+            row?.remove();
+            showMessage('success', result.message || 'Invoice column deleted.');
+        } catch (error) {
+            deleteButton.disabled = false;
+            showMessage('error', error.message);
+        }
+    });
+
+    saveButton.addEventListener('click', async function () {
+        const rows = Array.from(tableBody.querySelectorAll('tr[data-column-id]'));
+
+        if (rows.length === 0) {
+            showMessage('error', 'Add at least one invoice service column.');
+            return;
+        }
+
+        const columns = rows.map(row => {
+            const typeSelect = row.querySelector('.column-type');
+            const hiddenType = row.querySelector('.column-type-hidden');
+
+            return {
+                id: Number(row.dataset.columnId || 0),
+                column_label: row.querySelector('.column-label')?.value.trim() || '',
+                column_key: row.querySelector('.column-key')?.value.trim() || '',
+                column_type: hiddenType?.value || typeSelect?.value || 'text',
+                is_visible: row.querySelector('.column-visible')?.checked ? 1 : 0,
+                is_required: row.querySelector('.column-required')?.checked ? 1 : 0,
+                show_in_print: row.querySelector('.column-print')?.checked ? 1 : 0,
+                sort_order: Number(row.querySelector('.column-order')?.value || 0)
+            };
+        });
+
+        const invalid = columns.find(column =>
+            column.column_label === '' || column.column_key === ''
+        );
+
+        if (invalid) {
+            showMessage('error', 'Every column requires a label and key.');
+            return;
+        }
+
+        saveButton.disabled = true;
+        const originalHtml = saveButton.innerHTML;
+        saveButton.innerHTML = 'Saving...';
+
+        try {
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+            formData.append('columns_json', JSON.stringify(columns));
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await parseResponse(response);
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Unable to save invoice columns.');
+            }
+
+            showMessage('success', result.message || 'Invoice columns saved.');
+            await loadColumns();
+        } catch (error) {
+            showMessage('error', error.message);
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = originalHtml;
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+    });
+
+    loadColumns();
+});
+</script>
+<!-- RADLINK_DYNAMIC_COLUMNS_SCRIPT_END -->
+
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('invoiceSettingsForm');
+    const preview = document.getElementById('invoicePreview');
+
+    if (!form || !preview) {
+        return;
+    }
+
+    const defaultUpiId = <?= json_encode((string)($defaultBank['upi_id'] ?? '')) ?>;
+    const staticQrPath = <?= json_encode(
+        !empty($settings['invoice_uploaded_qr_path'])
+            ? app_url($settings['invoice_uploaded_qr_path'])
+            : ''
+    ) ?>;
+
+    const fieldTargets = {
+        invoice_title: 'previewInvoiceTitle',
+        invoice_copy_label: 'previewCopyLabel',
+        invoice_brand_heading: 'previewBusinessHeading',
+        invoice_sub_heading: 'previewSubHeading',
+        invoice_contact_mobile: 'previewInvoiceMobile',
+        invoice_contact_email: 'previewInvoiceEmail',
+        invoice_address: 'previewInvoiceAddress',
+        invoice_terms: 'previewTerms'
+    };
+
+    const currency = new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[character]);
+    }
+
+    function checked(name) {
+        return Boolean(
+            form.querySelector(`[name="${name}"][type="checkbox"]`)?.checked
+        );
+    }
+
+    function value(name, fallback = '') {
+        const field = form.elements[name];
+
+        if (!field) {
+            return fallback;
+        }
+
+        return String(field.value ?? '').trim();
+    }
+
+    function setText(id, text, fallback = '') {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = text !== '' ? text : fallback;
+        }
+    }
+
+    function setVisible(id, visible) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.hidden = !visible;
+        }
+    }
+
+    function sampleValue(columnKey, columnLabel) {
+        const key = String(columnKey || '').toLowerCase();
+        const label = String(columnLabel || '').toLowerCase();
+
+        if (key === 'service' || label.includes('service')) {
+            return 'CT BRAIN REPORTING';
+        }
+
+        if (key === 'quantity' || label.includes('count') || label.includes('qty')) {
+            return '1';
+        }
+
+        if (key === 'rate' || label.includes('rate')) {
+            return '250.00';
+        }
+
+        if (key === 'gross_amount' || label.includes('gross')) {
+            return '250.00';
+        }
+
+        if (key === 'discount_type') {
+            return 'None';
+        }
+
+        if (key === 'discount_value' || label === 'value') {
+            return '0.00';
+        }
+
+        if (
+            key === 'final_amount' ||
+            label.includes('final') ||
+            label === 'amount'
+        ) {
+            return '250.00';
+        }
+
+        return 'Sample';
+    }
+
+    function renderColumnsPreview() {
+        const columnBody = document.querySelector('#columnSettingsTable tbody');
+        const previewHead = document.getElementById('previewServiceHead');
+        const previewBody = document.getElementById('previewServiceBody');
+
+        if (!columnBody || !previewHead || !previewBody) {
+            return;
+        }
+
+        const columns = Array.from(
+            columnBody.querySelectorAll('tr[data-column-id]')
+        )
+            .map(row => ({
+                label: row.querySelector('.column-label')?.value.trim() || '',
+                key: row.querySelector('.column-key')?.value.trim() || '',
+                visible: row.querySelector('.column-visible')?.checked ?? true,
+                print: row.querySelector('.column-print')?.checked ?? false,
+                order: Number(row.querySelector('.column-order')?.value || 0)
+            }))
+            .filter(column => column.label !== '' && column.visible && column.print)
+            .sort((first, second) => first.order - second.order);
+
+        if (columns.length === 0) {
+            previewHead.innerHTML =
+                '<tr><th>S.NO.</th><th>NO PRINT COLUMNS SELECTED</th></tr>';
+
+            previewBody.innerHTML =
+                '<tr><td class="text-center">1</td><td class="text-muted">Enable Print for a column</td></tr>';
+
+            return;
+        }
+
+        previewHead.innerHTML =
+            '<tr><th>S.NO.</th>' +
+            columns.map(column =>
+                `<th>${escapeHtml(column.label)}</th>`
+            ).join('') +
+            '</tr>';
+
+        previewBody.innerHTML =
+            '<tr><td class="text-center">1</td>' +
+            columns.map(column =>
+                `<td>${escapeHtml(sampleValue(column.key, column.label))}</td>`
+            ).join('') +
+            '</tr>';
+    }
+
+    function renderQrPreview() {
+        const qr = document.getElementById('previewQr');
+
+        if (!qr) {
+            return;
+        }
+
+        const showQr = checked('invoice_show_qr');
+        const mode = value('invoice_qr_mode', 'dynamic_upi');
+        const amountSource = value(
+            'invoice_qr_amount_source',
+            'grand_total'
+        );
+        const qrSize = Math.max(
+            18,
+            Math.min(45, Number(value('invoice_qr_size_mm', '25')) || 25)
+        );
+
+        qr.hidden = !showQr;
+        qr.style.width = `${Math.round(qrSize * 2.85)}px`;
+        qr.style.height = `${Math.round(qrSize * 2.85)}px`;
+
+        if (!showQr) {
+            return;
+        }
+
+        if (mode === 'uploaded_qr') {
+            qr.innerHTML = staticQrPath
+                ? `<img src="${escapeHtml(staticQrPath)}"
+                        alt="Uploaded QR"
+                        style="width:100%;height:100%;object-fit:contain">`
+                : '<span class="text-muted">No static QR uploaded</span>';
+
+            return;
+        }
+
+        if (mode === 'upi_text_only') {
+            qr.innerHTML = defaultUpiId
+                ? `<div><strong>UPI</strong><br>${escapeHtml(defaultUpiId)}</div>`
+                : '<span class="text-danger">No active default UPI ID</span>';
+
+            return;
+        }
+
+        qr.innerHTML = defaultUpiId
+            ? `<div>
+                   <i data-lucide="qr-code" style="width:32px;height:32px"></i>
+                   <div class="mt-1"><strong>Dynamic UPI QR</strong></div>
+                   <small>${escapeHtml(defaultUpiId)}</small><br>
+                   <small>${amountSource === 'balance_amount' ? 'Balance amount' : 'Grand total'}</small>
+               </div>`
+            : '<span class="text-danger">Activate the default bank account and add its UPI ID</span>';
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+
+    function renderImagePreview(inputId, previewId, emptyText) {
+        const input = document.getElementById(inputId);
+        const box = document.getElementById(previewId);
+
+        if (!input || !box || !input.files?.[0]) {
+            return;
+        }
+
+        const file = input.files[0];
+
+        if (!file.type.startsWith('image/')) {
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.addEventListener('load', function () {
+            box.innerHTML =
+                `<img src="${reader.result}"
+                      alt="${escapeHtml(emptyText)}"
+                      style="max-width:100%;max-height:135px;object-fit:contain">`;
+        });
+
+        reader.readAsDataURL(file);
+    }
+
+    function renderPreview() {
+        Object.entries(fieldTargets).forEach(([fieldName, targetId]) => {
+            const fallback = [
+                'invoice_contact_mobile',
+                'invoice_contact_email',
+                'invoice_address'
+            ].includes(fieldName) ? '—' : '';
+
+            setText(targetId, value(fieldName), fallback);
+        });
+
+        preview.style.setProperty(
+            '--preview-theme',
+            value('invoice_theme_hex', '#E6C8F2')
+        );
+
+        preview.style.setProperty(
+            '--preview-heading',
+            value('invoice_heading_hex', '#7B169E')
+        );
+
+        preview.style.color = value('invoice_text_hex', '#111111');
+
+        setVisible('previewInvoiceAddress', checked('invoice_show_address'));
+        setVisible('previewLogo', checked('invoice_show_logo'));
+        setVisible('previewBankSection', checked('invoice_show_bank'));
+        setVisible('previewSignature', checked('invoice_show_signature'));
+
+        const prefix = value('invoice_prefix', 'RLS-INV').toUpperCase();
+        const padding = Math.max(
+            2,
+            Math.min(10, Number(value('invoice_number_padding', '4')) || 4)
+        );
+
+        setText(
+            'previewInvoiceNumber',
+            `${prefix} ${String(58).padStart(padding, '0')}`
+        );
+
+        const subtotalAmount = 250;
+        const subtotal = document.querySelector('.preview-subtotal');
+
+        if (subtotal) {
+            subtotal.innerHTML =
+                `<span class="text-center">SUBTOTAL</span>
+                 <span class="text-center">1</span>
+                 <span class="text-end">₹ ${currency.format(subtotalAmount)}</span>`;
+        }
+
+        const qrMode = document.getElementById('invoiceQrMode');
+        const staticSection = document.getElementById('staticQrUploadSection');
+
+        if (staticSection && qrMode) {
+            staticSection.hidden = qrMode.value !== 'uploaded_qr';
+        }
+
+        renderQrPreview();
+        renderColumnsPreview();
+    }
+
+    let frameId = 0;
+
+    function schedulePreview() {
+        window.cancelAnimationFrame(frameId);
+        frameId = window.requestAnimationFrame(renderPreview);
+    }
+
+    form.addEventListener('input', schedulePreview);
+    form.addEventListener('change', schedulePreview);
+
+    document
+        .getElementById('columnSettingsTable')
+        ?.addEventListener('input', schedulePreview);
+
+    document
+        .getElementById('columnSettingsTable')
+        ?.addEventListener('change', schedulePreview);
+
+    const columnBody = document.querySelector('#columnSettingsTable tbody');
+
+    if (columnBody) {
+        new MutationObserver(schedulePreview).observe(columnBody, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    document
+        .getElementById('businessLogoFile')
+        ?.addEventListener('change', function () {
+            renderImagePreview(
+                'businessLogoFile',
+                'businessLogoPreview',
+                'Business logo'
+            );
+
+            renderImagePreview(
+                'businessLogoFile',
+                'previewLogo',
+                'Business logo'
+            );
+        });
+
+    document
+        .getElementById('signatureFile')
+        ?.addEventListener('change', function () {
+            renderImagePreview(
+                'signatureFile',
+                'signaturePreview',
+                'Signature'
+            );
+
+            renderImagePreview(
+                'signatureFile',
+                'previewSignature',
+                'Signature'
+            );
+        });
+
+    document
+        .getElementById('qrFile')
+        ?.addEventListener('change', function () {
+            const qr = document.getElementById('previewQr');
+            const input = document.getElementById('qrFile');
+
+            if (!qr || !input?.files?.[0]) {
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.addEventListener('load', function () {
+                qr.innerHTML =
+                    `<img src="${reader.result}"
+                          alt="Uploaded QR"
+                          style="width:100%;height:100%;object-fit:contain">`;
+            });
+
+            reader.readAsDataURL(input.files[0]);
+        });
+
+    renderPreview();
 });
 </script>
 
