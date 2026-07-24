@@ -48,14 +48,26 @@ if ($search !== '') {
 $sql = "SELECT p.*, c.client_name, c.client_code, c.mobile, pm.mode_name,
                COALESCE(a.allocation_count, 0) AS allocation_count,
                CASE WHEN p.payment_status = 'posted' THEN GREATEST(p.unallocated_amount, 0) ELSE 0 END AS unallocated_balance,
-               COALESCE((
-                   SELECT SUM(i.balance_amount)
-                   FROM invoices i
-                   WHERE i.business_id = p.business_id
-                     AND i.client_id = p.client_id
-                     AND i.invoice_status = 'issued'
-                     AND i.balance_amount > 0
-               ), 0) AS pending_balance
+               GREATEST(
+                   COALESCE((
+                       SELECT SUM(i.balance_amount)
+                       FROM invoices i
+                       WHERE i.business_id = p.business_id
+                         AND i.client_id = p.client_id
+                         AND i.invoice_status = 'issued'
+                         AND i.balance_amount > 0
+                   ), 0)
+                   -
+                   COALESCE((
+                       SELECT SUM(p2.unallocated_amount)
+                       FROM payments p2
+                       WHERE p2.business_id = p.business_id
+                         AND p2.client_id = p.client_id
+                         AND p2.payment_status = 'posted'
+                         AND p2.unallocated_amount > 0
+                   ), 0),
+                   0
+               ) AS pending_balance
         FROM payments p
         INNER JOIN clients c ON c.id = p.client_id
         INNER JOIN payment_modes pm ON pm.id = p.payment_mode_id
@@ -80,12 +92,12 @@ foreach ($payments as &$payment) {
     if (($payment['payment_status'] ?? '') === 'reversed') {
         $payment['display_status'] = 'refunded';
         $payment['display_status_label'] = 'Refunded';
-    } elseif ($pendingBalance > 0.009 && $allocatedAmount > 0.009) {
-        $payment['display_status'] = 'partial';
-        $payment['display_status_label'] = 'Partial Paid';
-    } elseif ($pendingBalance > 0.009) {
+    } elseif ($allocatedAmount <= 0.009) {
         $payment['display_status'] = 'unpaid';
         $payment['display_status_label'] = 'Unpaid';
+    } elseif ($pendingBalance > 0.009) {
+        $payment['display_status'] = 'partial';
+        $payment['display_status_label'] = 'Partial';
     } else {
         $payment['display_status'] = 'paid';
         $payment['display_status_label'] = 'Paid';
@@ -99,23 +111,12 @@ $summaryStmt = $pdo->prepare(
         COALESCE(SUM(CASE WHEN payment_status='posted' THEN allocated_amount ELSE 0 END),0) AS total_allocated,
         COALESCE(SUM(CASE WHEN payment_status='posted' THEN unallocated_amount ELSE 0 END),0) AS total_unallocated,
         SUM(payment_status='posted') AS posted_count,
-        COALESCE((
-            SELECT SUM(i.balance_amount)
-            FROM invoices i
-            WHERE i.business_id = ?
-              AND i.invoice_status = 'issued'
-              AND i.balance_amount > 0
-        ),0) AS total_pending
+        SUM(payment_status='reversed') AS refunded_count
      FROM payments
      WHERE business_id = ?
        AND payment_date BETWEEN ? AND ?"
 );
-$summaryStmt->execute([
-    $currentBusinessId,
-    $currentBusinessId,
-    $dateFrom ?: '1900-01-01',
-    $dateTo ?: '2999-12-31'
-]);
+$summaryStmt->execute([$currentBusinessId, $dateFrom ?: '1900-01-01', $dateTo ?: '2999-12-31']);
 $summary = $summaryStmt->fetch() ?: [];
 
 include __DIR__ . '/includes/layout-start.php';
@@ -416,7 +417,7 @@ include __DIR__ . '/includes/layout-start.php';
             <p>Search, filter and manage hospital receipts, allocations and balances.</p>
         </div>
         <a class="btn btn-brand" href="<?= e(app_url('payment-form.php')) ?>">
-            <i data-lucide="circle-dollar-sign"></i> Record Payment
+            <i data-lucide="indian-rupee"></i> Record Payment
         </a>
     </div>
 
@@ -433,8 +434,8 @@ include __DIR__ . '/includes/layout-start.php';
         </div>
         <div class="summary-card"><small>Paid
                 Receipts</small><strong><?= number_format((int)($summary['posted_count'] ?? 0)) ?></strong></div>
-        <div class="summary-card"><small>Pending
-                Balance</small><strong>₹<?= number_format((float)($summary['total_pending'] ?? 0), 2) ?></strong></div>
+        <div class="summary-card"><small>Refunded
+                Receipts</small><strong><?= number_format((int)($summary['refunded_count'] ?? 0)) ?></strong></div>
     </div>
 
     <section class="card-ui filter-card p-3 p-lg-4">
@@ -527,18 +528,17 @@ include __DIR__ . '/includes/layout-start.php';
                         </td>
                         <td class="text-end">
                             <div class="payment-actions">
-                                <button type="button" class="btn btn-sm btn-light action-icon-btn view-payment"
-                                    title="View" data-id="<?= (int)$payment['id'] ?>"><i data-lucide="eye"></i></button>
+                                <a class="btn btn-sm btn-light action-icon-btn"
+                                    title="View Payment"
+                                    href="<?= e(app_url('payment-view.php?id=' . (int)$payment['id'])) ?>">
+                                    <i data-lucide="eye"></i>
+                                </a>
                                 <?php if (
-                                    $payment['payment_status'] === 'posted'
-                                    && in_array($payment['display_status'], ['partial', 'unpaid'], true)
+                                    in_array($payment['display_status'], ['unpaid', 'partial'], true)
                                     && (float)$payment['pending_balance'] > 0.009
                                 ): ?>
-                                <a class="btn btn-sm btn-outline-success action-icon-btn" title="Record Pending Payment"
-                                    href="<?= e(app_url(
-                                        'payment-form.php?client_id=' . (int)$payment['client_id']
-                                        . '&source_payment_id=' . (int)$payment['id']
-                                    )) ?>">
+                                <a class="btn btn-sm btn-outline-primary action-icon-btn" title="Record Pending Payment"
+                                    href="<?= e(app_url('payment-form.php?client_id=' . (int)$payment['client_id'] . '&source_payment_id=' . (int)$payment['id'])) ?>">
                                     <i data-lucide="indian-rupee"></i>
                                 </a>
                                 <?php endif; ?>
@@ -589,18 +589,17 @@ include __DIR__ . '/includes/layout-start.php';
                         Pending<br><strong>₹<?= number_format((float)$payment['pending_balance'], 2) ?></strong></div>
                 </div>
                 <div class="payment-actions mt-3">
-                    <button type="button" class="btn btn-sm btn-light action-icon-btn view-payment" title="View Payment"
-                        data-id="<?= (int)$payment['id'] ?>"><i data-lucide="eye"></i></button>
+                    <a class="btn btn-sm btn-light action-icon-btn"
+                        title="View Payment"
+                        href="<?= e(app_url('payment-view.php?id=' . (int)$payment['id'])) ?>">
+                        <i data-lucide="eye"></i>
+                    </a>
                     <?php if (
-                        $payment['payment_status'] === 'posted'
-                        && in_array($payment['display_status'], ['partial', 'unpaid'], true)
-                        && (float)$payment['pending_balance'] > 0.009
-                    ): ?>
-                    <a class="btn btn-sm btn-outline-success action-icon-btn" title="Record Pending Payment"
-                        href="<?= e(app_url(
-                            'payment-form.php?client_id=' . (int)$payment['client_id']
-                            . '&source_payment_id=' . (int)$payment['id']
-                        )) ?>">
+                                    in_array($payment['display_status'], ['unpaid', 'partial'], true)
+                                    && (float)$payment['pending_balance'] > 0.009
+                                ): ?>
+                    <a class="btn btn-sm btn-outline-primary action-icon-btn" title="Record Pending Payment"
+                        href="<?= e(app_url('payment-form.php?client_id=' . (int)$payment['client_id'] . '&source_payment_id=' . (int)$payment['id'])) ?>">
                         <i data-lucide="indian-rupee"></i>
                     </a>
                     <?php endif; ?>
@@ -628,31 +627,9 @@ include __DIR__ . '/includes/layout-start.php';
     </section>
 </div>
 
-<div class="modal fade" id="paymentDetailsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content card-ui">
-            <div class="modal-header">
-                <h5 class="modal-title">Payment Details</h5><button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="paymentDetailsBody">Loading...</div>
-        </div>
-    </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const money = value => '₹' + Number(value || 0).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-    const escapeHtml = value => {
-        const div = document.createElement('div');
-        div.textContent = String(value ?? '');
-        return div.innerHTML;
-    };
-
-
-    const filterForm = document.querySelector('form[method="get"]');
+const filterForm = document.querySelector('form[method="get"]');
     const searchInput = filterForm?.querySelector('input[name="search"]');
     let filterTimer = 0;
     let filterSubmitting = false;
@@ -678,110 +655,22 @@ document.addEventListener('DOMContentLoaded', () => {
         filterSubmitting = true;
     });
 
-    document.querySelectorAll('.view-payment').forEach(button => {
-        button.addEventListener('click', async () => {
-            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById(
-                'paymentDetailsModal'));
-            const body = document.getElementById('paymentDetailsBody');
-            body.innerHTML =
-                '<div class="text-center py-4"><span class="spinner-border"></span></div>';
-            modal.show();
-            try {
-                const detailsUrl = new URL(
-                    <?= json_encode(app_url('api/payment.php'), JSON_UNESCAPED_SLASHES) ?>,
-                    window.location.origin
-                );
-                detailsUrl.searchParams.set('action', 'details');
-                detailsUrl.searchParams.set('id', button.dataset.id);
-
-                const response = await fetch(
-                    detailsUrl.toString(), {
-                        credentials: 'same-origin',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    }
-                );
-                const result = await response.json();
-                if (!result.success) throw new Error(result.message);
-                const p = result.data.payment;
-                const allocations = result.data.allocations;
-                const statusLabel = p.payment_status === 'posted' ? 'Paid' : 'Refunded';
-                const allocationMethod = String(p.allocation_method || 'manual')
-                    .replaceAll('_', ' ')
-                    .replace(/\b\w/g, c => c.toUpperCase());
-                body.innerHTML = `
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <div class="p-3 rounded-3 border bg-body-tertiary d-flex justify-content-between align-items-start gap-3">
-                                <div>
-                                    <small class="text-muted">Receipt Number</small>
-                                    <div class="fs-5">${escapeHtml(p.receipt_number)}</div>
-                                    <div class="small text-muted">${escapeHtml(p.payment_date || '')}</div>
-                                </div>
-                                <span class="payment-status ${escapeHtml(p.payment_status)}">${statusLabel}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6"><small class="text-muted">Hospital</small><div>${escapeHtml(p.client_name)}</div><small class="text-muted">${escapeHtml(p.client_code || '')}</small></div>
-                        <div class="col-md-3"><small class="text-muted">Payment Mode</small><div>${escapeHtml(p.mode_name)}</div></div>
-                        <div class="col-md-3"><small class="text-muted">Reference</small><div>${escapeHtml(p.transaction_reference || '—')}</div></div>
-                        <div class="col-md-4"><small class="text-muted">Payer Name</small><div>${escapeHtml(p.payer_name || p.client_name)}</div></div>
-                        <div class="col-md-4"><small class="text-muted">Allocation Method</small><div>${escapeHtml(allocationMethod)}</div></div>
-                        <div class="col-md-4"><small class="text-muted">Allocation Count</small><div>${allocations.length}</div></div>
-                    </div>
-
-                    <div class="row g-3 mt-1 mb-3">
-                        <div class="col-md-4"><div class="summary-card h-100"><small>Payment Received</small><strong>${money(p.amount)}</strong></div></div>
-                        <div class="col-md-4"><div class="summary-card h-100"><small>Paid Amount</small><strong>${money(p.allocated_amount)}</strong></div></div>
-                        <div class="col-md-4"><div class="summary-card h-100"><small>Unallocated / Advance</small><strong>${money(p.unallocated_amount)}</strong></div></div>
-                    </div>
-
-                    <h6 class="mb-2">Invoice Allocation Details</h6>
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead><tr><th>Invoice</th><th>Date</th><th class="text-end">Paid Amount</th></tr></thead>
-                            <tbody>
-                            ${allocations.length
-                                ? allocations.map(a => `<tr><td>${escapeHtml(a.invoice_number)}</td><td>${escapeHtml(a.invoice_date_display)}</td><td class="text-end">${money(a.allocated_amount)}</td></tr>`).join('')
-                                : '<tr><td colspan="3" class="text-center text-muted py-4">This payment is kept as advance/unallocated and is not linked to an invoice.</td></tr>'}
-                            </tbody>
-                        </table>
-                    </div>
-                    ${p.notes ? `<div class="mt-3"><small class="text-muted">Notes</small><div>${escapeHtml(p.notes)}</div></div>` : ''}
-                    ${p.reversal_reason ? `<div class="alert alert-danger mt-3 mb-0"><strong>Refund reason:</strong> ${escapeHtml(p.reversal_reason)}</div>` : ''}
-                `;
-            } catch (error) {
-                body.innerHTML =
-                    `<div class="alert alert-danger">${escapeHtml(error.message)}</div>`;
-            }
-        });
-    });
-                const result = await response.json();
-                AppToast.show(result.success ? 'success' : 'error', result.message);
-                if (result.success) setTimeout(() => location.reload(), 450);
-            } catch (error) {
-                AppToast.show('error', 'Unable to reverse payment.');
-            }
-        });
-    });
-
     document.querySelectorAll('.delete-payment').forEach(button => {
         button.addEventListener('click', async () => {
             const receipt = button.dataset.receipt || 'this payment';
+            const confirmed = window.confirm(
+                `Delete ${receipt}? This will remove the receipt, remove its allocations, and restore the linked invoice balances.`
+            );
+            if (!confirmed) return;
 
-            if (!confirm(
-                `Delete ${receipt}? The receipt, allocations and advance amount will be removed, and linked invoice balances will be recalculated.`
-            )) {
-                return;
-            }
+            const originalHtml = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
             const formData = new FormData();
             formData.set('csrf_token', '<?= e(csrf_token()) ?>');
             formData.set('action', 'delete_payment');
             formData.set('payment_id', button.dataset.id);
-
-            button.disabled = true;
 
             try {
                 const response = await fetch('<?= e(app_url('api/payment.php')) ?>', {
@@ -796,26 +685,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const raw = await response.text();
                 let result;
-
                 try {
                     result = JSON.parse(raw);
-                } catch {
+                } catch (parseError) {
                     throw new Error(
                         raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-                        || 'Invalid server response.'
+                        || 'Invalid response while deleting the payment.'
                     );
                 }
 
-                AppToast.show(result.success ? 'success' : 'error', result.message);
-
-                if (result.success) {
-                    setTimeout(() => window.location.reload(), 450);
-                    return;
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to delete payment.');
                 }
+
+                if (window.AppToast?.show) {
+                    AppToast.show('success', result.message || 'Payment deleted successfully.');
+                }
+
+                window.setTimeout(() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('deleted', '1');
+                    window.location.href = url.toString();
+                }, 350);
             } catch (error) {
-                AppToast.show('error', error.message || 'Unable to delete payment.');
-            } finally {
+                if (window.AppToast?.show) {
+                    AppToast.show('error', error.message || 'Unable to delete payment.');
+                } else {
+                    window.alert(error.message || 'Unable to delete payment.');
+                }
                 button.disabled = false;
+                button.innerHTML = originalHtml;
+                if (window.lucide) lucide.createIcons();
             }
         });
     });

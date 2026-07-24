@@ -746,40 +746,68 @@ if ($action === 'delete_payment') {
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare(
-            "SELECT * FROM payments
+        $paymentStmt = $pdo->prepare(
+            "SELECT id, business_id, client_id, receipt_number, amount,
+                    allocated_amount, unallocated_amount, payment_status
+             FROM payments
              WHERE id = ?
                AND business_id = ?
+             LIMIT 1
              FOR UPDATE"
         );
-        $stmt->execute([$paymentId, $currentBusinessId]);
-        $payment = $stmt->fetch();
+        $paymentStmt->execute([$paymentId, $currentBusinessId]);
+        $payment = $paymentStmt->fetch();
 
         if (!$payment) {
-            throw new RuntimeException('Payment not found.');
+            throw new RuntimeException('Payment not found or already deleted.');
         }
 
         $invoiceStmt = $pdo->prepare(
-            "SELECT invoice_id
+            "SELECT DISTINCT invoice_id
              FROM payment_allocations
+             WHERE payment_id = ?
+               AND business_id = ?
+             FOR UPDATE"
+        );
+        $invoiceStmt->execute([$paymentId, $currentBusinessId]);
+        $invoiceIds = array_values(array_unique(array_map(
+            'intval',
+            $invoiceStmt->fetchAll(PDO::FETCH_COLUMN)
+        )));
+
+        /*
+         * hospital_settlements has a foreign key to payments without
+         * ON DELETE CASCADE. Remove linked settlement rows first so the
+         * payment can be deleted without a foreign-key error.
+         */
+        $settlementDelete = $pdo->prepare(
+            "DELETE FROM hospital_settlements
              WHERE payment_id = ?
                AND business_id = ?"
         );
-        $invoiceStmt->execute([$paymentId, $currentBusinessId]);
-        $invoiceIds = array_map('intval', $invoiceStmt->fetchAll(PDO::FETCH_COLUMN));
+        $settlementDelete->execute([$paymentId, $currentBusinessId]);
+        $deletedSettlements = $settlementDelete->rowCount();
 
-        $pdo->prepare(
+        $allocationDelete = $pdo->prepare(
             "DELETE FROM payment_allocations
              WHERE payment_id = ?
                AND business_id = ?"
-        )->execute([$paymentId, $currentBusinessId]);
+        );
+        $allocationDelete->execute([$paymentId, $currentBusinessId]);
+        $deletedAllocations = $allocationDelete->rowCount();
 
-        $pdo->prepare(
+        $paymentDelete = $pdo->prepare(
             "DELETE FROM payments
              WHERE id = ?
                AND business_id = ?"
-        )->execute([$paymentId, $currentBusinessId]);
+        );
+        $paymentDelete->execute([$paymentId, $currentBusinessId]);
 
+        if ($paymentDelete->rowCount() !== 1) {
+            throw new RuntimeException('Payment could not be deleted.');
+        }
+
+        /* Rebuild every affected invoice from the remaining posted allocations. */
         foreach ($invoiceIds as $invoiceId) {
             recalculate_invoice_payment($pdo, $currentBusinessId, $invoiceId);
         }
@@ -789,18 +817,26 @@ if ($action === 'delete_payment') {
             $currentBusinessId,
             'delete',
             $paymentId,
-            'Deleted payment ' . $payment['receipt_number']
+            'Deleted payment ' . $payment['receipt_number'] .
+            '; amount ' . number_format((float)$payment['amount'], 2, '.', '') .
+            '; removed allocations ' . $deletedAllocations .
+            '; removed settlements ' . $deletedSettlements
         );
 
         $pdo->commit();
 
-        json_response(true, 'Payment deleted successfully. Invoice balances and payment totals were recalculated.', [
+        json_response(true, 'Payment deleted and invoice balances restored successfully.', [
             'payment_id' => $paymentId,
-            'recalculated_invoice_count' => count($invoiceIds),
+            'receipt_number' => $payment['receipt_number'],
+            'deleted_allocations' => $deletedAllocations,
+            'deleted_settlements' => $deletedSettlements,
+            'recalculated_invoice_ids' => $invoiceIds,
         ]);
 
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log('[PAYMENT DELETE] ' . $e->getMessage());
         json_response(false, $e->getMessage(), [], 422);
     }
